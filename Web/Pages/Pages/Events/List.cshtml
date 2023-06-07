@@ -1,0 +1,66 @@
+﻿@page "{month?}"
+@model Web.Pages.Events.ListModel
+@{
+    ViewData["Title"] = "Events";
+}
+<link rel="stylesheet" href="~/styles/EventsList.css" asp-append-version="true" />
+@using System.Globalization;
+@using Logic.Models.Events;
+
+<div>
+    <div class="w-100 d-flex align-items-center mb-3 justify-content-center">
+        <a class="btn btn-outline-dark px-2" asp-route-month="@(Model.Month - 1)">Prev</a>
+        <span class="mx-3 text-center">@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(new DateTime(DateTime.Now.Year, DateTime.Now.Month + Model.Month, 1).Month)</span>
+        <a class="btn btn-outline-dark px-2" asp-route-month="@(Model.Month + 1)">Next</a>
+    </div>
+    @if (Model.Events.Count == 0)
+    {
+        <p class="fs-3 text-center">There are no events this month!</p>
+    } else
+    {
+        <div class="gap-5 pb-5 d-flex flex-wrap w-100 justify-content-center">
+            @foreach(var eventObj in Model.Events) {
+                <a class="card nav-link col-12 col-sm-5 col-lg-3" asp-page="/Pages/Events/Event" asp-route-id="@eventObj.Id">
+                    <img class="w-100 ratio-16x9 card-img-top" style="height:10em;object-fit:cover" src="@eventObj.Thumbnail" />
+                    <div class="card-body">
+                        <div class="d-flex flex-column justify-content-between w-100">
+                            <span class="card-title">@eventObj.Title</span>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex align-items-center fs-5">
+                                    <img style="width:1.25em;height:1.25em;" class="pe-2" src="~/assets/calendar.svg" alt="location-icon" />
+                                    @if(eventObj is TimedEvent timedEvent) @timedEvent.Start.ToString("dd/MM, HH:mm")
+                                </li>
+                                @if (!string.IsNullOrEmpty(@eventObj.Venue))
+                                {
+                                    <li class="list-group-item d-flex">
+                                        <img style="width:1.5em;height:1.5em;" class="pe-1 me-1" src="~/assets/location.svg" alt="location-icon" />
+
+                                        <span class="text-muted fs-6 overflow-hidden" style="white-space: nowrap;text-overflow:ellipsis">@eventObj.Venue</span>
+                                    </li>
+                                }
+                                @if (eventObj.Signed != null)
+                                {
+                                    <li class="list-group-item">
+                                        <span class="text-muted fs-6 overflow-hidden">Students signed - @eventObj.Signed</span>
+                                        @if (eventObj is PaidEvent paidEvent)
+                                        {
+                                            <span class="text-muted fs-6 overflow-hidden">(@paidEvent.Percentage%)</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+</div>
+
+@section scripts{
+    <script>
+        $(document).ready(function () {
+            $('#successModal').modal('show');
+        });
+    </script>
+}

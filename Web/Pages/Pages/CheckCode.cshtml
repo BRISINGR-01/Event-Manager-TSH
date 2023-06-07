@@ -1,0 +1,47 @@
+﻿@page "{id?}"
+@model Web.Pages.Pages.CheckCodeModel
+@{
+    ViewData["Title"] = "Check Code";
+}
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+@if (Model.Events.Count == 0)
+{
+    <p>There are no events occuring right now</p>
+} else
+{
+    @foreach (var Event in Model.Events)
+    {
+        <p>@Event.Title</p>
+    }
+
+    @if (Model.Id == null) {
+        <div id="reader" width="600px"></div>
+    } else if (Model.CheckedUser != null) {
+        <div class="bg-@(Model.IsSigned ? "success" : "danger")">
+            @if (Model.IsSigned)
+            {
+                <div>@Model.CheckedUser.UserName is signed!</div>
+            } else
+            {
+                <div>@Model.CheckedUser.UserName is not signed!</div>
+            }
+        </div>
+    }
+}
+
+
+<script>
+    function onScanSuccess(decodedText, decodedResult) {
+        // handle the scanned code as you like, for example:
+        try {
+            const url = new URL(decodedText);
+            if (url.origin === window.location.origin) window.location.href = url.href;
+        } catch {}
+    }
+
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader",
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+      /* verbose= */ false);
+    html5QrcodeScanner.render(onScanSuccess);
+</script>

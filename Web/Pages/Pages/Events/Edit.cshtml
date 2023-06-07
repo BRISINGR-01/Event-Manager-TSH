@@ -1,0 +1,83 @@
+﻿@page "{id?}"
+@model Web.Pages.Events.EditModel
+@{
+    ViewData["Title"] = "Edit Event";
+}
+@using Logic.Models.Events
+
+<div class="">
+    <h3 class="title">Fill in the details:</h3>
+    <form class="form-buttons d-flex align-items-center flex-column" method="post" enctype="multipart/form-data">
+        <div class="field col-sm-3">
+            <label asp-for="EventModel.Image" class="form-label"></label>
+            <span asp-validation-for="EventModel.Image"></span>
+            <input asp-for="EventModel.Image" type="file" class="form-control">
+        </div>
+        <div class="field col-sm-3 col-8">
+            <label asp-for="EventModel.Title" class="form-label"></label>
+            <span asp-validation-for="EventModel.Title"></span>
+            <input asp-for="EventModel.Title" class="form-control" value="@Model.Event?.Title">
+        </div>
+        <div class="field col-sm-6 col-10">
+            <label asp-for="EventModel.Description" class="form-label"></label>
+            <span asp-validation-for="EventModel.Description"></span>
+            <textarea rows="5" asp-for="EventModel.Description"type="text" class="form-control" value="@Model.Event?.Description"></textarea>
+        </div>
+        <div class="field d-flex flex-sm-row flex-column gap-3 justify-content-between col-sm-6 col-10 py-2">
+            <div>
+                <label asp-for="EventModel.Start" class="form-label"></label>
+                <span asp-validation-for="EventModel.Start"></span>
+                <input id="start-date" asp-for="EventModel.Start" type="datetime-local" class="form-control" value="@(Model.Event is TimedEvent timedEvent ? timedEvent.Start.ToString("yyyy-MM-ddThh:mm") : "")">
+                @(Model.Event is TimedEvent timedEvent2 ? timedEvent2.Start.ToString("yyyy-MM-ddThh:mm") : "")
+                <label asp-for="EventModel.End" class="form-label"></label>
+                <span asp-validation-for="EventModel.End"></span>
+                <input id="end-date" asp-for="EventModel.End" type="datetime-local" class="form-control" value="@(Model.Event is TimedEvent timedEventEnd ? timedEventEnd.End?.ToString("yyyy-MM-ddThh:mm") : "")">
+            </div>
+            <div>
+                <label asp-for="EventModel.Price" class="form-label"></label>
+                <span asp-validation-for="EventModel.Price"></span>
+                <input step="any" asp-for="EventModel.Price" type="number" class="form-control" value="@(Model.Event is PaidEvent paidEvent2 ? paidEvent2.Price: null)">
+
+                <label asp-for="EventModel.MaxParticipants" class="form-label"></label>
+                <span asp-validation-for="EventModel.MaxParticipants"></span>
+                <input asp-for="EventModel.MaxParticipants" type="number" class="form-control" value="@(Model.Event is PaidEvent paidEvent ? paidEvent.MaxParticipants : null)">
+            </div>
+        </div>
+        <div class="field col-sm-5 col-10">
+            <label asp-for="EventModel.Venue" class="form-label"></label>
+            <span asp-validation-for="EventModel.Venue"></span>
+            <input asp-for="EventModel.Venue" type="text" class="form-control" value="@Model.Event?.Venue">
+        </div>
+        <div class="d-flex gap-3 mt-3">
+            <button type="submit" class="btn btn-dark">Done</button>
+            <button id="promptRemove" type="button" class="btn btn-danger">Remove</button>
+            @*The button should not be in the form*@
+        </div>
+    </form>
+
+
+    <div id="removeModal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-top modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-body fs-3 m-0 p-0 text-center">
+                    <div class="alert alert-danger p-4 m-0" role="alert">This event will be deleted permanently!</div>
+                    <form id="remove" method="post" asp-page-handler="Delete">
+                        <button id="promptYes" class="btn btn-light pb-2 px-3 fs-4 w-100">Continue</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $('textarea').text($('textarea').attr("value"))
+    document.getElementById('start-date').addEventListener("change", e => {
+        const startDate = new Date(e.target.value);
+        startDate.setHours(startDate.getHours() + defaultEventDuration - start.getTimezoneOffset() / 60);
+        document.getElementById('end-date').value = startDate.toISOString().slice(0, -5);
+    });
+
+    
+    $("#promptRemove").on("click", () => $("#removeModal").modal("show"));
+</script>

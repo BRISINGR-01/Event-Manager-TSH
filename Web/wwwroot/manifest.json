@@ -1,0 +1,21 @@
+{
+  "name": "TSH - Events",
+  "short_name": "TSH - Events",
+  "start_url": "/Events/List",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffdd00",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "assets/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "assets/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ]
+}

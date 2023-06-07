@@ -1,0 +1,44 @@
+﻿@page
+@model Web.Pages.Pages.CodeModel
+@{
+    ViewData["Title"] = "Check code";
+}
+
+<input id="userId" hidden type="text" value="@Model.Id"/>
+<div class="w-100 h-100 d-flex justify-content-center align-items-center bg-yellow flex-column gap-5">
+    <div id="qrcode" style="border: 2em solid white; border-radius: 1em"></div>
+    <a class="btn btn-dark" id="qr-download">
+        <img alt="download" src="~/assets/download.svg"/>
+    </a>
+</div>
+
+@if (Model.User.IsStudentComitee)
+{
+    <a asp-page="CheckCode" class="position-absolute bottom-0 end-0 m-3">
+        Scan QR code
+    </a>
+}
+
+
+<script src="~/lib/qrcodejs/qrcode.min.js"></script>
+<script>
+    $(document).ready(function () {
+        const url = window.location.origin + "/CheckCode/" + $("#userId").val();
+        var qrcode = new QRCode("qrcode", { colorLight: "#fff" });
+        qrcode.makeCode(url);
+    });
+    $("#qr-download").on("click", () => {
+        let data = document.getElementById("qrcode").querySelector("img")?.src;
+        if (!data) return;
+
+        console.log(data)
+
+        var link = document.createElement("a");
+        link.download = "event code";
+        link.href = data;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        delete link;
+    })
+</script>

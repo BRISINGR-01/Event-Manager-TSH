@@ -1,0 +1,69 @@
+﻿@page
+@model Web.Pages.Events.CreateModel
+@{
+    ViewData["Title"] = "New Event";
+}
+
+<div>
+    <h3 class="title">Fill in the details:</h3>
+    <form class="form-buttons d-flex align-items-center flex-column" method="post" enctype="multipart/form-data">
+        <div class="field col-sm-3">
+            <label asp-for="Event.Image" class="form-label"></label>
+            <span asp-validation-for="Event.Image"></span>
+            <input asp-for="Event.Image" type="file" class="form-control">
+        </div>
+        <div class="field col-sm-3 col-8">
+            <label asp-for="Event.Title" class="form-label"></label>
+            <span asp-validation-for="Event.Title"></span>
+            <input asp-for="Event.Title" class="form-control">
+        </div>
+        <div class="field col-sm-6 col-10">
+            <label asp-for="Event.Description" class="form-label"></label>
+            <span asp-validation-for="Event.Description"></span>
+            <textarea rows="5" asp-for="Event.Description" type="text" class="form-control"></textarea>
+        </div>
+        <div class="field d-flex flex-sm-row flex-column gap-3 justify-content-between col-sm-6 col-10 py-2">
+            <div>
+                <label asp-for="Event.Start" class="form-label"></label>
+                <span asp-validation-for="Event.Start"></span>
+                <input id="start-date" asp-for="Event.Start" type="datetime-local" class="form-control">
+                
+                <label asp-for="Event.End" class="form-label"></label>
+                <span asp-validation-for="Event.End"></span>
+                <input id="end-date" asp-for="Event.End" type="datetime-local" class="form-control">
+            </div>
+            <div>
+                <label asp-for="Event.Price" class="form-label"></label>
+                <span asp-validation-for="Event.Price"></span>
+                <input step="any" asp-for="Event.Price" type="number" class="form-control">
+                
+                <label asp-for="Event.MaxParticipants" class="form-label"></label>
+                <span asp-validation-for="Event.MaxParticipants"></span>
+                <input asp-for="Event.MaxParticipants" type="number" class="form-control">
+            </div>
+        </div>
+        <div class="field col-sm-5 col-10">
+            <label asp-for="Event.Venue" class="form-label"></label>
+            <span asp-validation-for="Event.Venue"></span>
+            <input asp-for="Event.Venue" type="text" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-dark mt-2">Done</button>
+    </form>
+</div>
+
+<script>
+    const defaultEventDuration = 3;
+    const date = new Date();
+    date.setHours(18 - date.getTimezoneOffset() / 60);
+    date.setMinutes(0);
+    date.setSeconds(0);
+    date.setMilliseconds(0);
+    document.getElementById('start-date').value = date.toISOString().slice(0, -5);
+    document.getElementById('start-date').addEventListener("change", e => {
+        const startDate = new Date(e.target.value);
+        startDate.setHours(startDate.getHours() + defaultEventDuration - date.getTimezoneOffset() / 60);
+        document.getElementById('end-date').value = startDate.toISOString().slice(0, -5);
+    })
+    date.setHours(18 + defaultEventDuration - date.getTimezoneOffset() / 60);
+    document.getElementById('end-date').value = date.toISOString().slice(0, -5);
+</script>

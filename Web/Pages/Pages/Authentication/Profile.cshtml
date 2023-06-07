@@ -1,0 +1,79 @@
+﻿@page
+@model Web.Pages.Authentication.ProfileModel
+@{
+    ViewData["Title"] = "Profile";
+}
+
+@if (Model.LoggedUser != null)
+{
+    <section>
+        <div class="container py-5 h-100">
+            <div class="row d-flex justify-content-center align-items-center h-100">
+                <div class="col col-lg-6 mb-4 mb-lg-0">
+                    <div class="card mb-3 bg-light">
+                        <div class="row g-0">
+                            @if (Model.LoggedUser.IsEventResponsible)
+                            {
+                                <div class="col-md-4 gradient-custom px-3 pt-5" align="center">
+                                    @if(Model.LoggedUser.Image == null)
+                                    {
+                                        <form method="post" asp-page-handler="Image" enctype="multipart/form-data">
+                                            <label class="file-upload btn btn-secondary rounded-circle p-2">
+                                                <img src="~/assets/plus.svg" alt="add" width="40px" height="40px" />
+                                                <span asp-validation-for="UserViewModel.Image"></span>
+                                                <input hidden id="imageFile" asp-for="UserViewModel.Image" type="file" class="form-control">
+                                            </label>
+                                            <p id="addPicture" class="mt-2">Add picture</p>
+                                            <button id="imgSubmit" type="submit" hidden class="btn btn-info">Submit</button>
+                                        </form>
+                                    } else
+                                    {
+                                        <img alt="Avatar" class="img-fluid rounded" src="@Model.LoggedUser.Image"/>
+                                        <form method="post" asp-page-handler="Image" enctype="multipart/form-data">
+                                            <label class="file-upload px-2 mt-2 btn btn-outline-secondary">
+                                                <span asp-validation-for="UserViewModel.Image"></span>
+                                                <input hidden id="imageFile" asp-for="UserViewModel.Image" type="file" class="form-control">
+                                                <span id="addPicture" class="mt-2">Change Photo</span>
+                                                <button id="imgSubmit" type="submit" hidden class="btn btn-info">Change photo</button>
+                                            </label>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                            <div class="col-md-8">
+                                <div class="card-body p-4">
+                                    <h3>Information</h3>
+                                    <hr class="mt-0 mb-4">
+                                    <div class="row pt-1">
+                                        <p class="fs-3">First Name</p>
+                                        <p class="text-muted">@Model.LoggedUser.FirstName</p>
+                                    </div>
+                                    <hr class="mt-0 mb-4">
+                                    <div class="row pt-1">
+                                        <p class="fs-3">Last Name</p>
+                                        <p class="text-muted">@Model.LoggedUser.LastName</p>
+                                    </div>
+                                    <hr class="mt-0 mb-4">
+                                    <div class="row pt-1">
+                                        <p class="fs-3">Email</p>
+                                        <span class="fs-4 text-muted">@Model.LoggedUser.Email</span>
+                                    </div>
+                                    <hr class="mt-2 mb-4">
+                                    <div class="float-end mb-3">
+                                        <a class="btn btn-danger" asp-page="/Pages/Authentication/LogOut">Log Out</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+<script>
+    document.getElementById("imageFile")?.addEventListener("change", e => {
+        document.getElementById("imgSubmit").click();
+    })
+</script>

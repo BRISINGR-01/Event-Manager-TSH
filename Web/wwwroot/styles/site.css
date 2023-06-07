@@ -1,0 +1,28 @@
+html, body, allContainer {
+    margin: 0;
+    width: 100vw;
+    min-height: 100vh;
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+:root {
+    --yellow: #ffdd00;
+    --black: #000f;
+    --red: #c4200a;
+    --pink: #ff9ab0;
+    --blue: #0071ff;
+    --green: #00953c;
+}
+
+.bg-yellow {
+    background-color: var(--yellow) !important;
+}
+
+a > .invert-yellow:hover {
+    background-color: var(--yellow) !important;
+}
+
+.text-shadow {
+    text-shadow: 1px 1px 0px #000
+}

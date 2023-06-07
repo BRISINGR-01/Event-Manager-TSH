@@ -1,0 +1,52 @@
+﻿@page
+@model Web.Pages.Pages.Events.StatisticsModel
+@{
+    ViewData["Title"] = "Statistics";
+}
+@using Logic.Models.Events
+
+<div class="d-flex justify-content-around w-100 flex-wrap">
+    <div class="ms-2">
+        <span class="fs-3 fw-bold m-sm-4">Events per month</span> 
+        <ul class="list-group mt-2">
+            @foreach (var month in Model.MonthlyStatistics) {
+                <li class="list-group-item bg-dark text-light">
+                    @month.Key: @month.Value
+                </li>
+            }
+        </ul>
+    </div>
+    <div class="ms-2">
+        <span class="fs-3 fw-bold m-sm-4">Signed students per month</span> 
+        <ul class="list-group mt-2">
+            @foreach (var e in Model.Events) {
+                <li class="list-group-item bg-dark text-light d-flex justify-content-between">
+                    <span>@e.Title:</span>
+                    <span>
+                        @if (e is PaidEvent paidEvent)
+                        {
+                            <span>(@paidEvent.Percentage%)</span>
+                        }
+                        @e.Signed
+                    </span>
+                </li>
+            }
+        </ul>
+    </div>
+    <div class="ms-2">
+        <span class="fs-3 fw-bold m-sm-4">Students statistics</span> 
+        <ul class="list-group mt-2">
+            @foreach (var u in Model.UserStatistics) {
+                <li class="list-group-item bg-dark text-light  d-flex justify-content-between">
+                    <span>@u.Key:</span>
+                    @foreach (var p in u.Value)
+                    {
+                        <span>
+                            @p.Key: @p.Value
+                        </span>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+</div>

@@ -1,0 +1,74 @@
+﻿@page
+@model Web.Pages.Authentication.LogInModel
+@{
+    ViewData["Title"] = "Log In";
+}
+<div class="container p-5 col-sm-8 col-lg-5">
+    <h1 class="mb-3 text-center text-light" style="text-shadow: 1px 1px 0px #000">Log In</h1>
+    <form method="post" asp-page-handler="LogIn">
+        <!-- Email input -->
+        <div class="form-outline mb-4">
+            <label asp-for="LoggedUser.Email" class="form-label"></label>
+            <span asp-validation-for="LoggedUser.Email"></span>
+            <input asp-for="LoggedUser.Email" class="form-control">
+        </div>
+
+        <!-- Password input -->
+        <div class="form-outline mb-4">
+            <label asp-for="LoggedUser.Password" class="form-label"></label>
+            <span asp-validation-for="LoggedUser.Password"></span>
+            <input asp-for="LoggedUser.Password" type="password" class="form-control">
+        </div>
+        @if (Model.AreCredentialsWrong)
+        {
+            <div class="alert alert-danger" role="alert">
+                Please provide correct email and password
+            </div>
+        }
+        <!-- 2 column grid layout -->
+        <div class="row mb-4">
+            <div class="col-md-6 d-flex justify-content-center">
+                <!-- Checkbox -->
+                <div class="form-check mb-3 mb-md-0">
+                    <input class="form-check-input" type="checkbox" id="loginCheck" asp-for="RememberMe" checked />
+                    <label class="form-check-label" for="loginCheck"> Remember me </label>
+                </div>
+            </div>
+
+            <div class="col-md-6 d-flex justify-content-center">
+                <!-- Simple link -->
+                <a href="#!">Forgot password?</a>
+            </div>
+        </div>
+
+        <!-- Submit button -->
+        <button type="submit" class="btn btn-dark btn-block mb-4">Log in</button>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $("#tab-register").click(function () {
+                $("#tab-login").removeClass('active');
+                $("#tab-register").addClass('active');
+                $("#pills-register").addClass("show");
+                $("#pills-register").addClass("active");
+                $("#pills-login").removeClass("show");
+                $("#pills-login").removeClass("active");
+            });
+        });
+        $(function () {
+            $("#tab-login").click(function () {
+                $("#tab-register").removeClass('active');
+                $("#tab-login").addClass('active');
+                $("#pills-login").addClass("show");
+                $("#pills-login").addClass("active");
+                $("#pills-register").removeClass("show");
+                $("#pills-register").removeClass("active");
+            });
+        });
+    </script>
+    <partial name="_ValidationScriptsPartial" />
+}
+

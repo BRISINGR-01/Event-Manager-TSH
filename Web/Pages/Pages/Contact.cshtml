@@ -1,0 +1,70 @@
+﻿@page
+@model Web.Pages.Pages.ContactModel
+@{
+    ViewData["Title"] = "Contacts";
+}
+@section Styles {
+        <link href="@Href("~/css/ContactInformaton.css")" rel="stylesheet" type="text/css" />
+}
+
+@if (Model.IsLoading)
+{
+    <h1>Loading...</h1>
+}
+else if (Model.HasError)
+{
+    <h1>An error occured</h1>
+}
+else
+{
+    <div class="d-flex justify-content-center align-items-center">
+        <ul class="list-group col-sm-6">
+            @if (Model.EventOrganizer != null)
+            {
+                <li class="list-group-item bg-yellow">
+                    <h2>Event Organizer</h2>
+                    <div class="d-flex">
+                        @if (Model.EventOrganizer.Image == null)
+                        {
+                            <img class="col-6 col-sm-3" alt="User photo" src="~/assets/user.svg" />
+                        }
+                        else
+                        {
+                            <img class="col-6 col-sm-3" alt="User photo" src="@Model.EventOrganizer.Image" />
+                        }
+                        <div class="fs-3 ms-5 fw-bold">
+                            @Model.EventOrganizer.UserName
+                            <br />
+                            @Model.EventOrganizer.Email
+                        </div>
+                    </div>
+                </li>
+            }
+            @if (Model.Students.Count != 0)
+            {
+                <li class="list-group-item bg-yellow">
+                    <h2>Student Comitee</h2>
+                    <ul class="list-group">
+                        @foreach (var user in Model.Students)
+                        {
+                            <li class="list-group-item d-flex bg-yellow">
+                                @if (user.Image == null)
+                                {
+                                    <img class="col-6 col-sm-3" alt="User photo" src="~/assets/user.svg" />
+                                } else
+                                {
+                                    <img class="col-6 col-sm-3 p-2" alt="User photo" src="@user.Image" />
+                                }
+                                <div class="fs-3 ms-5 fw-bold">
+                                    @user.UserName
+                                    <br />
+                                    @user.Email
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </li>
+            }
+        </ul>
+    </div>
+}

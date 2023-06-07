@@ -1,0 +1,140 @@
+﻿@model PageModelWrapper
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    @RenderSection("styles", false)
+    <link rel="stylesheet" href="~/styles/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap-grid.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap-reboot.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap-utilities.css" asp-append-version="true" />
+    <link href="~/manifest.json" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="~/assets/icon-512.png" />
+    <link rel="icon" href="~/assets/favicon.ico"/>
+    <link rel="apple-touch-icon" sizes="192x192" href="~/assets/icon-192.png" />
+</head>
+<body>
+    <script type="text/javascript" src="~/lib/jquery/dist/jquery.min.js"></script>
+    <div class="d-flex flex-column w-100 h-100 bg-yellow" style="min-height:100vh">
+        @if (User?.Identity?.IsAuthenticated == true && !Model.HttpContext.Request.Path.ToString().EndsWith("/ServerError"))
+        {
+            <header class="d-flex justify-content-between align-items-center m-3" style="z-index:3">
+                <button id="navbar-btn" class="btn btn-dark">
+                    <img width="30" height="30" alt="navbar" src="/assets/navbar.svg"/>
+                </button>
+                @if (!Model.HttpContext.Request.Path.ToString().EndsWith("/Events/List") && !Model.HttpContext.Request.Path.ToString().EndsWith("/ServerError"))
+                {
+                    <bytton class="end-0 btn btn-dark ratio-1x1" onclick="history.go(-1)">
+                        <img width="20" alt="back" src="/assets/back.svg"/>
+                    </bytton>
+                }
+                <nav style="transition: .5s;border-bottom-right-radius:50px;z-index:20;border: 2px solid" class="position-absolute top-0 bg-dark border-top-0 border-start-0 border-light opacity-0">
+                    <ul class="nav nav-pills text-center text-light rounded m-2 hidden flex-column">
+                        <li class="nav-item w-100">
+                            <a class="nav-link text-light d-flex justify-content-start @(Model.HttpContext.Request.Path.ToString().EndsWith("/Events/List") ? "bg-secondary text-light" : "")" asp-area="" asp-page="/Pages/Events/List">
+                                <img class="me-2" width="30" alt="Events" src="/assets/events.svg" />
+                                Events
+                            </a>
+                        </li>
+                        <li class="nav-item w-100">
+                            <a class="nav-link text-light d-flex justify-content-start @(Model.HttpContext.Request.Path.ToString().EndsWith("/Contact") ? "bg-secondary text-light" : "")" asp-area="" asp-page="/Pages/Contact">
+                                <img class="me-2" width="30" alt="Contact" src="/assets/contact.svg" />
+                                Contact
+                            </a>
+                        </li>
+                        @if (User.Identity.IsAuthenticated && Model.User.IsEventOrganizer)
+                        {
+                            <li class="nav-item w-100">
+                                <a class="nav-link text-light d-flex justify-content-start @(Model.HttpContext.Request.Path.ToString().EndsWith("/Statistics") ? "bg-secondary text-light" : "")" asp-area="" asp-page="/Pages/Events/Statistics">
+                                    <img class="me-2" width="30" alt="Statistics" src="/assets/statistics.svg" />
+                                    Statistics
+                                </a>
+                            </li>
+                            <li class="nav-item w-100">
+                                <a class="nav-link text-light d-flex justify-content-start @(Model.HttpContext.Request.Path.ToString().EndsWith("/Create") ? "bg-secondary text-light" : "")" asp-area="" asp-page="/Pages/Events/Create">
+                                    <img class="me-2" width="30" alt="Statistics" src="/assets/plus.svg" />
+                                    Create Event
+                                </a>
+                            </li>
+                        }
+                        <li class="nav-item w-100">
+                            <a class="nav-link text-light d-flex justify-content-start @(Model.HttpContext.Request.Path.ToString().EndsWith("/CheckCode") || Model.HttpContext.Request.Path.ToString().EndsWith("/Code") ? "bg-secondary text-light" : "")" asp-area="" asp-page="/Pages/Code">
+                                <img class="me-2" width="30" alt="QR code" src="/assets/qrCode.svg" />
+                                QR
+                            </a>
+                        </li>
+                        <li class="nav-item w-100">
+                            <a class="nav-link text-light d-flex justify-content-start @(Model.HttpContext.Request.Path.ToString().EndsWith("/Profile") ? "bg-secondary text-light" : "")" asp-area="" asp-page="/Pages/Authentication/Profile">
+                                <img class="me-2" width="30" alt="Profile" src="/assets/profile.svg"/>
+                                Profile
+                            </a>
+                        </li>
+                        <li class="nav-item w-100 border-0">
+                            <btn id="back-btn" class="btn border-0">
+                                <img alt="back" height="30" src="/assets/back.svg"/>
+                            </btn>
+                        </li>
+                    </ul>
+                </nav>
+            </header>
+        }
+        <div class="container flex-grow-1">
+            <main role="main" class="pb-3 h-100">
+                @if (!string.IsNullOrEmpty(Model.Error))
+                {
+                    <div id="successModal" class="modal fade" tabindex="-1" role="dialog">
+                        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" id="closeErrorModal" class="btn-close" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body fs-3 m-5 overflow-hidden">
+                                    @Model.Error
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-danger overflow-hidden border-4 border-dark" role="alert">
+                        @Model.Error
+                    </div>
+                    
+                }
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+
+    @await RenderSectionAsync("Scripts", required: false)
+    <script type="text/javascript" src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        if (new URLSearchParams(location.search).get("handler") !== null) {
+            location.replace(window.location.pathname);
+        }
+        $('nav').css("left", -$('nav').width() - 2);
+        $('nav').css('cssText', $('nav')[0].getAttribute("style") + "opacity: 1 !important")
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/js/service-worker.js');
+        }
+        $("#navbar-btn").on("click", () => {
+            $("#navbar-btn").animate({ opacity: 0 })
+            $('nav').css( "left", 0);
+        });
+        $("#back-btn").on("click", closeNav);
+        $(window).on("click", () => {
+            if ($('#navbar-btn').css('opacity') == 0) closeNav();
+        })
+        function closeNav() {
+            $('nav').css( "left", -$('nav').width() - 2);
+            setTimeout(() => {
+                $("#navbar-btn").animate({ opacity: 1 })
+            }, 250)
+        }
+    </script>
+</body>
+</html>

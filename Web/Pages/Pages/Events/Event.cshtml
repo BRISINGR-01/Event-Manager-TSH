@@ -1,0 +1,77 @@
+﻿@page "{id?}"
+@model Web.Pages.Events.EventModel
+@{
+    if (Model.Event == null) RedirectToPage("/Pages/Events/List");
+    else ViewData["Title"] = Model.Event.Title;
+}
+@using Logic.Models.Events
+
+<div class="position-relative h-100">
+    @if (Model.Event != null)
+    {
+        @if (Model.User.IsEventOrganizer)
+        {
+            <a class="btn btn-dark position-absolute bottom-0 m-4 p-4 end-0 fs-3 rounded-circle p-0 d-flex align-items-center justify-content-center position-fixed" style="width:55px;height:55px;z-index:100" asp-page="/Pages/Events/Edit" asp-route-id="@Model.Event.Id">
+                <img class="p-1" src="~/assets/edit.svg" alt="add" width="40px" height="40px" />
+            </a>
+        }
+        <div class="w-100 z-0">
+            <img 
+                class="w-100"
+                src="@Model.Event.Background" 
+                style="filter: blur(2px) brightness(75%); height: 80vh; object-fit: cover"
+             />
+            <div class="z-1 position-absolute top-0 text-light p-5 bg-opacity-75 bg-dark h-100 w-100">
+                <h1>@Model.Event.Title</h1>
+                <h3>@Model.Event.Description</h3>
+
+                <div class="mt-4 fs-4">
+                    <img style="width:2em;height:2em;filter: invert(1);" src="~/assets/calendar.svg" alt="location-icon" />
+                    <span>
+                        @if (Model.Event is TimedEvent timedEvent)
+                        {
+                            <span>@timedEvent.Start</span>
+                            @if (timedEvent != null) {
+                                <span> - @timedEvent.End</span>
+                            }
+                        }
+                    </span>
+                </div>
+                <br />
+                @if (!string.IsNullOrEmpty(Model.Event.Venue)) {
+                    <div class="mb-4">
+                        <img style="width:2em;height:2em;filter: invert(1);" src="~/assets/location.svg" alt="location-icon" />
+                        <span class="text-secondary fs-4" style="overflow-x: hidden; max-width: 20vw">@Model.Event.Venue</span>
+                    </div>
+                }
+                @if (!Model.User.IsEventOrganizer)
+                {
+                    if (Model.IsSigned)
+                    {
+                        if (Model.Event is TimedEvent timedEventStart)
+                        {
+                            <form id="remove" method="post" asp-page-handler="UnSign">
+                                <button class="btn btn-danger">Cancel</button>
+                            </form>
+                        }
+                    }
+                    else if (Model.Event.IsFullyBooked)
+                    {
+                        <h3>Sorry, but the event is full!</h3>
+                    }
+                    else
+                    {
+                        @if (!Model.User.IsStudentComitee && Model.Event is PaidEvent paidEvent && paidEvent.Price > 0)
+                        {
+                            <span class="fs-4 mb-2">Price: @string.Format("{0:C}", paidEvent.Price)$</span>
+                        }
+                        <form id="remove" method="post" asp-page-handler="SignUp">
+                            <button class="btn btn-success">Sign Up</button>
+                        </form>
+                    }
+                }
+            </div>
+        </div>
+
+    }
+</div>
