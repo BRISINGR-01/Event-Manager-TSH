@@ -9,20 +9,21 @@ This allowed me to see how they were created, managed and promoted. The organize
 ## Run
 You need to setup a local mysql database and create tables accordingly to the db.sql. Then put the connection string in the app.config in the Web and Desktop solutions (whichever you want to run). The connection string must contain the following: "OldGuids=True;charset=utf8;"
 ex:
-`<?xml version='1.0' encoding='utf-8'?>
-<configuration>
-	<connectionStrings>
-		<clear />
-		<add name="Local"
-		 providerName="System.Data.ProviderName"
-		 connectionString="<connection details>;OldGuids=True;charset=utf8;"/>
-		<add name="Online"
-		providerName="System.Data.ProviderName"
-		connectionString="<connection details>;OldGuids=True;charset=utf8"/>
-	</connectionStrings>
-</configuration>`
+```<?xml version='1.0' encoding='utf-8'?>  
+<configuration>    
+	<connectionStrings>  
+		<clear />  
+		<add name="Local"  
+		 providerName="System.Data.ProviderName"  
+		 connectionString="<connection details>;OldGuids=True;charset=utf8;"/>  
+		<add name="Online"  
+		providerName="System.Data.ProviderName"  
+		connectionString="<connection details>;OldGuids=True;charset=utf8"/>  
+	</connectionStrings>  
+</configuration>
+```  
 
-The following nuget packages in the specified solutions are required:
-MySql.Data - Infrastructure
-SixLabors.ImageSharp - Infrastructure
-bootstrap - Web
+The following nuget packages in the specified solutions are required:  
+- MySql.Data - `Infrastructure` 
+- SixLabors.ImageSharp - `Infrastructure`  
+- bootstrap - `Web`  
