@@ -27,3 +27,6 @@ The following nuget packages in the specified solutions are required:
 - MySql.Data - `Infrastructure` 
 - SixLabors.ImageSharp - `Infrastructure`  
 - bootstrap - `Web`  
+
+## Architecture
+The project is divided into three layers: Presentation(Web + Desktop), Business(Logic), and Infrastructure(Data). It implements all the SOLID principles including dependency inversion which makes the unit testing of the logic layer with a mock data layer possible. The project includes two apps - [ASP.NET Razor pages](https://github.com/dotnet/razor) website and a [Winforms](https://github.com/dotnet/winforms) desktop application. Both share the same Logic and Data layers. For the database is used MySql, hosted on Fontys servers.
