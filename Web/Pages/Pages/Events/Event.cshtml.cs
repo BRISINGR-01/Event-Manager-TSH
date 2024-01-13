@@ -1,16 +1,15 @@
-using Logic;
+using Logic.Interfaces;
 using Logic.Models;
 using Logic.Models.Events;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Shared.Enums;
+using Web.Middlewares.Authentication;
 
 namespace Web.Pages.Events
 {
-    [AllowAnonymous]
     public class EventModel : PageModelWrapper
     {
+        public EventModel(IManager manager, IAuthenticationContext ctx) : base(manager, ctx) { }
         [BindProperty(SupportsGet = true)]
         public string? Id { get; set; }
         public Event? Event { get; private set; }
@@ -18,25 +17,24 @@ namespace Web.Pages.Events
         public bool IsSigned = false;
         public IActionResult OnGet()
         {
-            if (!Initiate()) return NotInitiated;
-
             if (Guid.TryParse(Id, out var eventGuid))
-            {           
+            {
                 var res = Manager.Event.GetBy(eventGuid);
-                if (res.IsSuccessful && res.Value != null)
+                if (res.IsSuccessful)
                 {
                     Event = res.Value;
-                    var presenceRes = Manager.Event.Participance.GetEventUserState(eventGuid, User.Id);
-                    if (presenceRes.IsSuccessful && presenceRes.Value != null)
+                    var presenceRes = Manager.Event.Participance.GetEventUserParticipance(eventGuid, Ctx.User.Id);
+                    if (presenceRes.IsSuccessful)
                     {
                         IsSigned = presenceRes.Value.State == EventParticipanceEnum.Signed;
                     }
-                } else if (res.Value == null)
+                }
+                else if (res.Value == null)
                 {
                     Error = "Cannot find event!";
                     return Page();
                 }
-                else 
+                else
                 {
                     return HandleError(res.Plain);
                 }
@@ -49,19 +47,15 @@ namespace Web.Pages.Events
 
         public IActionResult OnPostSignUp()
         {
-            if (!Initiate()) return NotInitiated;
-
-            if (User.IsEventOrganizer) return NotInitiated;
+            if (Ctx.User.IsEventOrganizer) return RedirectToLogIn;
 
             if (Guid.TryParse(Id, out var eventGuid))
             {
-                var res = Manager.Event.AlterParticipance(User.Id, eventGuid, EventParticipanceEnum.Signed);
-               
-                if (!res.IsSuccessful)
+                var res = Manager.Event.AlterParticipance(Ctx.User.Id, eventGuid, EventParticipanceEnum.Signed);
+
+                if (res.IsUnSuccessful)
                 {
-                    return res.ErrorIsDefault ? 
-                        HandleError("There was a problem with signing you up for the event") : 
-                        HandleError(res.Plain);
+                    return HandleError(res);
                 }
             }
 
@@ -69,19 +63,15 @@ namespace Web.Pages.Events
         }
         public IActionResult OnPostUnSign()
         {
-            if (!Initiate()) return NotInitiated;
-
-            if (User.IsEventOrganizer) return NotInitiated;
+            if (Ctx.User.IsEventOrganizer) return RedirectToLogIn;
 
             if (Guid.TryParse(Id, out var eventGuid))
             {
-                var res = Manager.Event.AlterParticipance(User.Id, eventGuid, EventParticipanceEnum.None);
-                
-                if (!res.IsSuccessful)
+                var res = Manager.Event.AlterParticipance(Ctx.User.Id, eventGuid, EventParticipanceEnum.None);
+
+                if (res.IsUnSuccessful)
                 {
-                    return res.ErrorIsDefault ? 
-                        HandleError("There was a problem while canceling you for the event") :
-                        HandleError(res.Plain);
+                    return HandleError(res);
                 }
             }
 

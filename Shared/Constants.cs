@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Security.Cryptography;
 
 namespace Shared
 {
@@ -16,7 +11,6 @@ namespace Shared
         public static readonly HashAlgorithmName METHOD = HashAlgorithmName.SHA384;
         public static readonly int OFFSET_LIMIT_VALUE = 10;
 
-        public static string EmailCookie = "9ash";
-        public static string PasswordCookie = "fvd9";
+        public static string TokenCookie = "token";
     }
 }

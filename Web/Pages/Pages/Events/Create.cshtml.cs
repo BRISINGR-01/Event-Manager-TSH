@@ -1,43 +1,76 @@
+using Logic.Interfaces;
+using Logic.Models.Events;
+using Logic.Models.Images;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Authorization;
-using Web.ViewModels;
-using Domain.Managers;
-using Infrastructure.DatabaseManagers;
-using Logic.Models;
 using Shared;
 using Shared.Enums;
+using Web.Middlewares.Authentication;
+using Web.ViewModels;
 
 namespace Web.Pages.Events
 {
-    [Authorize(Roles = "EventOrganizer")]
     public class CreateModel : PageModelWrapper
     {
+        public CreateModel(IManager manager, IAuthenticationContext ctx) : base(manager, ctx, UserRole.EventOrganizer) { }
+        [BindProperty(SupportsGet = true)]
+        public string? Suggestion { get; set; }
         [BindProperty]
-        public EventViewModel Event { get; set; } = new();
-        public IActionResult OnGet()
+        public EventViewModel EventViewModel { get; set; } = new();
+        public Event? SuggestionData = null;
+        public void OnGet()
         {
-            return Initiate() ? Page() : NotInitiated;
+            if (!Guid.TryParse(Suggestion, out Guid Id)) return;
+
+            var res = Manager.Event.GetById(Id);
+            if (res.IsUnSuccessful) return;
+
+            SuggestionData = res.Value;
+            if (SuggestionData == null) return;
+
+            EventViewModel.Description = SuggestionData.Description;
         }
-        public IActionResult OnPost()
+        public virtual IActionResult OnPost()
         {
-            if (!Initiate()) return NotInitiated;
             if (!ModelState.IsValid) return Page();
 
-            if (Event.Image == null)
+            if (EventViewModel.Image == null)
             {
                 Error = "You need to upload an image!";
                 return Page();
             }
 
-            Event.Id = Helpers.NewGuid;
-            Event.BranchId = User.BranchId;
+            Guid id = Helpers.NewGuid;
 
-            var imageRes = Manager.Image.Create(new Logic.Models.Images.Image(Event.Id, Event.Image.FileName, Event.Image.OpenReadStream(), ImageType.Background));
-            if (!imageRes.IsSuccessful) return HandleError(imageRes);
+            var imageRes = Manager.Image.Create(Image.New(
+                id,
+                Ctx.User.BranchId,
+                EventViewModel.Image.FileName,
+                EventViewModel.Image.OpenReadStream(),
+                ImageType.Background)
+            );
+            if (imageRes.IsUnSuccessful) return HandleError(imageRes);
 
-            var res = Manager.Event.Create(Event.Map());
-            if (!res.IsSuccessful) return HandleError(res);
+            Event @event = Event.New(id, Ctx.User.BranchId, EventViewModel.Title, EventViewModel.Description, EventViewModel.Venue, false);
+
+            if (EventViewModel.Start != null)
+            {
+                @event = TimedEvent.New(
+                    @event,
+                    (DateTime)EventViewModel.Start,
+                    EventViewModel.End
+                );
+                if (EventViewModel.Price != null)
+                {
+                    @event = PaidEvent.New(
+                        (TimedEvent)@event,
+                        (double)EventViewModel.Price,
+                        EventViewModel.MaxParticipants
+                    );
+                }
+            }
+
+            var res = Manager.Event.Create(@event);
+            if (res.IsUnSuccessful) return HandleError(res);
 
             return RedirectToPage("/Pages/Events/List");
         }

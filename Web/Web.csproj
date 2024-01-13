@@ -2,10 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
+	<ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Web</RootNamespace>
 	<ServiceWorkerAssetsManifest>service-worker.js</ServiceWorkerAssetsManifest>
+	  <Nullable>enable</Nullable>
+	  <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+	<UserSecretsId>7f7b5682-4e2c-411c-90b6-882e650a019a</UserSecretsId>
   </PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -21,7 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="bootstrap" Version="5.2.3" />
+    <PackageReference Include="bootstrap" Version="5.3.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
   </ItemGroup>
 
 	<ItemGroup>

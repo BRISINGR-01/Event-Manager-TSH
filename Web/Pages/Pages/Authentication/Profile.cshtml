@@ -4,7 +4,7 @@
     ViewData["Title"] = "Profile";
 }
 
-@if (Model.LoggedUser != null)
+@if (Model.ExpandedLoggedUser != null)
 {
     <section>
         <div class="container py-5 h-100">
@@ -12,10 +12,10 @@
                 <div class="col col-lg-6 mb-4 mb-lg-0">
                     <div class="card mb-3 bg-light">
                         <div class="row g-0">
-                            @if (Model.LoggedUser.IsEventResponsible)
+                            @if (Model.ExpandedLoggedUser.IsEventResponsible)
                             {
                                 <div class="col-md-4 gradient-custom px-3 pt-5" align="center">
-                                    @if(Model.LoggedUser.Image == null)
+                                    @if (Model.ExpandedLoggedUser.Image == null)
                                     {
                                         <form method="post" asp-page-handler="Image" enctype="multipart/form-data">
                                             <label class="file-upload btn btn-secondary rounded-circle p-2">
@@ -28,7 +28,7 @@
                                         </form>
                                     } else
                                     {
-                                        <img alt="Avatar" class="img-fluid rounded" src="@Model.LoggedUser.Image"/>
+                                        <img alt="Avatar" class="img-fluid rounded" src="@Model.ExpandedLoggedUser.Image" />
                                         <form method="post" asp-page-handler="Image" enctype="multipart/form-data">
                                             <label class="file-upload px-2 mt-2 btn btn-outline-secondary">
                                                 <span asp-validation-for="UserViewModel.Image"></span>
@@ -46,17 +46,17 @@
                                     <hr class="mt-0 mb-4">
                                     <div class="row pt-1">
                                         <p class="fs-3">First Name</p>
-                                        <p class="text-muted">@Model.LoggedUser.FirstName</p>
+                                        <p class="text-muted">@Model.ExpandedLoggedUser.FirstName</p>
                                     </div>
                                     <hr class="mt-0 mb-4">
                                     <div class="row pt-1">
                                         <p class="fs-3">Last Name</p>
-                                        <p class="text-muted">@Model.LoggedUser.LastName</p>
+                                        <p class="text-muted">@Model.ExpandedLoggedUser.LastName</p>
                                     </div>
                                     <hr class="mt-0 mb-4">
                                     <div class="row pt-1">
                                         <p class="fs-3">Email</p>
-                                        <span class="fs-4 text-muted">@Model.LoggedUser.Email</span>
+                                        <span class="fs-4 text-muted">@Model.Email</span>
                                     </div>
                                     <hr class="mt-2 mb-4">
                                     <div class="float-end mb-3">

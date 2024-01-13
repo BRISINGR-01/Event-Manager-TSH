@@ -9,10 +9,10 @@
 <div class="position-relative h-100">
     @if (Model.Event != null)
     {
-        @if (Model.User.IsEventOrganizer)
+        @if (Model.Ctx.User.IsEventOrganizer)
         {
             <a class="btn btn-dark position-absolute bottom-0 m-4 p-4 end-0 fs-3 rounded-circle p-0 d-flex align-items-center justify-content-center position-fixed" style="width:55px;height:55px;z-index:100" asp-page="/Pages/Events/Edit" asp-route-id="@Model.Event.Id">
-                <img class="p-1" src="~/assets/edit.svg" alt="add" width="40px" height="40px" />
+                <img class="p-1" src="~/assets/edit.svg" alt="add" width="40" height="40" />
             </a>
         }
         <div class="w-100 z-0">
@@ -44,7 +44,7 @@
                         <span class="text-secondary fs-4" style="overflow-x: hidden; max-width: 20vw">@Model.Event.Venue</span>
                     </div>
                 }
-                @if (!Model.User.IsEventOrganizer)
+                @if (!Model.Ctx.User.IsEventOrganizer)
                 {
                     if (Model.IsSigned)
                     {
@@ -61,7 +61,7 @@
                     }
                     else
                     {
-                        @if (!Model.User.IsStudentComitee && Model.Event is PaidEvent paidEvent && paidEvent.Price > 0)
+                        @if (!Model.Ctx.User.IsStudentComitee && Model.Event is PaidEvent paidEvent && paidEvent.Price > 0)
                         {
                             <span class="fs-4 mb-2">Price: @string.Format("{0:C}", paidEvent.Price)$</span>
                         }

@@ -1,27 +1,34 @@
-using Logic;
+using Infrastructure;
+using Logic.Configuration;
+using Logic.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Shared.Enums;
 using Web;
-
-//var startup = new Startup(builder.Configuration);
-//startup.ConfigureServices(builder.Services); // calling ConfigureServices method
-//var app = builder.Build();
-//startup.Configure(app, builder.Environment); // calling Configure method
-//// Add services to the container.
-
+using Web.Middlewares;
+using Web.Middlewares.Authentication;
+using Web.Middlewares.Errors;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddErrorLogger();
 
 // Add services to the container.
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => {
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
+{
     options.LoginPath = new PathString("/Pages/Authentication/LogIn");
 });
+
+builder.Services.Configure<HashingConfig>(builder.Configuration.GetSection(HashingConfig.Section));
+builder.Services.Configure<VapidConfig>(builder.Configuration.GetSection(VapidConfig.Section));
+builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection(EmailConfig.Section));
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession();
 
 builder.Services.AddRazorPages();
 
+builder.Services.AddSingleton<IManager, Manager>();
+builder.Services.AddScoped<IAuthenticationContext, AuthenticationContext>();
 
 var app = builder.Build();
 
@@ -36,6 +43,10 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ErrorLoggingMiddleware>();
+app.UseMiddleware<IpHandlerMiddleware>();
+app.UseMiddleware<IdentityUserMiddleware>();
+
+app.MapPost("subscribe-to-notifications", Utilities.SubscribeTonotifications);
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

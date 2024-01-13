@@ -1,14 +1,15 @@
-﻿using Shared.Enums;
-using Logic.Models;
+﻿using Logic.Models;
+using Shared.Enums;
 
 namespace Desktop.Forms.Accounts
 {
     public partial class AddEditAccount : Form
     {
         public User? User { get; private set; }
+        public string Password { get; private set; } = string.Empty;
+        public string Email { get; private set; } = string.Empty;
         public AddEditAccount(List<Branch> branches, Branch? selectedBranch = null)
         {
-            // add
             InitializeComponent();
             User = null;
 
@@ -43,8 +44,6 @@ namespace Desktop.Forms.Accounts
             BranchCb.SelectedItem = selectedBranch;
             nameBox.Text = User.UserName;
             roleCb.SelectedIndex = roleCb.Items.IndexOf(user.Role);
-            PasswordBox.Text = User.Password;
-            emailBox.Text = User.Email;
 
             this.Text = "Edit student";
         }
@@ -67,10 +66,10 @@ namespace Desktop.Forms.Accounts
                 User?.Id ?? Guid.Empty,
                 ((Branch)BranchCb.SelectedItem).Id,
                 nameBox.Text,
-                PasswordBox.Text,
-                (UserRole)roleCb.SelectedItem,
-                emailBox.Text
+                (UserRole)roleCb.SelectedItem
             );
+            Password = PasswordBox.Text;
+            Email = emailBox.Text;
 
             this.Close();
         }

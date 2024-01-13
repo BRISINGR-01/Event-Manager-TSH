@@ -1,0 +1,202 @@
+  @startuml
+
+  note "All general classes/interfaces that depend on another general class/interface, \
+  depend in fact on the corresponding one, ex: BranchManager -> Branch." as N1 
+  note "DB generals: Branch, Event, EventSuggestion, Participance, User" as N3
+  note "non-DB generals: Image, Local data" as N4
+
+  package Logic {
+    interface IManager {
+      +UserManager User
+      +EventManager Event
+      +EventSuggestionManager EventSuggestion
+      +BranchManager Branch
+      +ImageManager Image
+      +LocalDataManager Local
+    }
+
+    class DbManager<T> <<general>> {
+      -DbRepositoryInterface _repository
+      +DbManager(DbRepositoryInterface repository)
+      --methods--
+    }
+    DbManager --|> DbRepositoryInterface
+    DbManager --|> BaseDbManager
+    DbManager --o Entity
+
+    class Manager<T> <<general>> {
+      -RepositoryInterface _repository
+      +Manager(RepositoryInterface repository)
+      --methods--
+    }
+    Manager --o Entity
+    Manager --o RepositoryInterface
+
+    abstract class BaseDbManager<T> {
+      #IDbRepository<T> repository
+      #BaseDbManager(IDbRepository<T> repository)
+      +Result<List<T>> GetAll(int? offsetIndex = null)
+      +Result<T?> GetById(Guid id)
+      +Result Create(T entity)
+      +Result Update(T entity)
+      +Result Delete(Guid id)
+    }
+    BaseDbManager --o IEntity
+    BaseDbManager --o IDbRepository
+
+    interface IEntity {
+      +Guid Id
+    }
+    class Entity <<general>> {
+      +Guid Id
+      --fields--
+    }
+    Entity ..|> IEntity
+
+    interface DbRepositoryInterface<T> <<general>> {
+      --methods--
+    }
+    DbRepositoryInterface --|> IDbRepository
+    DbRepositoryInterface --o Entity
+    
+    interface RepositoryInterface<T> <<general>> {
+      --methods--
+    }
+    RepositoryInterface --|> IRepository
+    RepositoryInterface --o Entity
+
+    interface IDbRepository<T> {
+      +T? GetById(Guid id)
+      +List<T> GetAll(int? offsetIndex = null)
+      +bool Create(T entity)
+      +bool Update(T entity)
+      +bool Delete(Guid id)
+    }
+    IDbRepository --o IEntity
+    interface IRepository<T> {}
+    IRepository --o IEntity
+  }
+
+  package SQL {
+    interface IEntityFactory {
+      +string Convert(Enum @enum)
+    }
+    interface IEnumToStringConverter {
+      +T Create<T>()
+    }
+    class SqlQueryBuilder {
+      -MySqlConnection connection
+      -MySqlCommand command
+      -string tableName
+      -IEnumToStringConverter converter
+      -IEntityFactory entityBuilder
+      -Command cmd
+      --Commands--
+      +Select Select
+      +Insert Insert
+      +Update Update
+      +Delete Delete
+      --Constructors--
+      +SQLQueryBuilder(MySqlConnection, string, IEnumToStringConverter, IEntityFactory)
+      +SQLQueryBuilder FromTable(string tableName)
+    }
+    interface ICommand {
+      +string TableName
+      +string CommandText
+      +IEntityFactory EntityFactory
+      +void AddTextToCommand(string)
+      +void SetParam(string, object?)
+      +bool ExecuteNonQuery()
+      +List<IDbDataReader> GetAllValues()
+      +IDbDataReader? GetFirstValue()
+      +void Close()
+    }
+    class Command {
+      -MySqlCommand command
+      -IEnumToStringConverter enumConverter
+      +IEntityFactory EntityFactory
+      +string CommandText
+      +string TableName
+      +void AddTextToCommand(string)
+      +void SetParam(string, object?)
+      +bool ExecuteNonQuery()
+      +List<IDbDataReader> GetAllValues()
+      +IDbDataReader? GetFirstValue()
+      +void Close()
+    }
+    Command ..|> ICommand
+    Command --* IEntityFactory
+    Command --* IEnumToStringConverter
+    Command --* IDbDataReader
+    
+    interface IDbDataReader {
+      +string GetString(string)
+      +string? GetNullableString(string)
+      +Guid GetId(string)
+      --other...--
+    }
+    class SqlReaderWrapper {
+      -MySqlDataReader reader
+      +SqlReaderWrapper(MySqlDataReader)
+      --methods--
+      +string GetString(string)
+      +string? GetNullableString(string)
+      +Guid GetId(string)
+      --other...--
+    }
+    SqlReaderWrapper ..|> IDbDataReader
+  }
+
+  package Data {
+    class Manager {
+      -IdentityUser? user
+      -string connectionString
+      +UserManager User
+      +EventManager Event
+      +EventSuggestionManager EventSuggestion
+      +BranchManager Branch
+      +ImageManager Image
+      +LocalDataManager Local
+    }
+    Manager ..|> Logic.IManager
+    Manager --o Logic.DbManager : contains
+
+
+    class EntityFactory {
+      +T Create<T>()
+    }
+    EntityFactory ..|> SQL.IEntityFactory
+    class EnumToStringConverter {
+      +string Convert(Enum @enum)
+    }
+    EnumToStringConverter ..|> SQL.IEnumToStringConverter
+
+    class Table <<general>> {
+      +string TableName = "tsh_user"
+      +string Id = "id"
+      --other columns--   
+    }
+    class Repository <<general>> {
+      --methods--
+    }
+    class DbRepository <<general>> {
+      +Repository(string connectionString)
+      --methods--
+    }
+    class DatabaseRepository {
+      #SQLQueryBuilder sql
+      +DatabaseRepository(string connectionString, string tableName)
+    }
+
+    Repository ..|> Logic.RepositoryInterface
+    DbRepository ..|> Logic.DbRepositoryInterface
+    DbRepository --|> DatabaseRepository
+    DbRepository --o Table
+    DatabaseRepository --o SQL.SqlQueryBuilder
+    DatabaseRepository --o EntityFactory
+    DatabaseRepository --o EnumToStringConverter
+  }
+
+  package Shared {}
+
+  @enduml

@@ -1,13 +1,10 @@
 ﻿using Logic.Interfaces;
+using Shared;
 using Shared.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Logic.Models.Events
 {
+
     public class EventParticipance : IEntity
     {
         public Guid Id { get; private set; }
@@ -15,6 +12,7 @@ namespace Logic.Models.Events
         public Guid UserId { get; private set; }
         public EventParticipanceEnum State { get; private set; }
 
+        public static EventParticipance New(Guid eventId, Guid userId, EventParticipanceEnum participance) => new(Helpers.NewGuid, eventId, userId, participance);
         public EventParticipance(Guid id, Guid eventId, Guid userId, EventParticipanceEnum participance)
         {
             Id = id;

@@ -1,0 +1,34 @@
+image: mcr.microsoft.com/dotnet/sdk:latest
+
+variables:
+  OBJECTS_DIRECTORY: "obj"
+  NUGET_PACKAGES_DIRECTORY: ".nuget"
+  SOURCE_CODE_PATH: "*/*/"
+cache:
+  key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
+  paths:
+    - "$SOURCE_CODE_PATH$OBJECTS_DIRECTORY/project.assets.json"
+    - "$SOURCE_CODE_PATH$OBJECTS_DIRECTORY/*.csproj.nuget.*"
+    - "$NUGET_PACKAGES_DIRECTORY"
+
+  policy: pull-push
+
+build:
+  stage: build
+  script:
+    - "dotnet build ./Web/Web.csproj"
+
+tests:
+  stage: test
+  script:
+    - "dotnet test './Unit testing'"
+
+deploy:
+  stage: deploy
+  script:
+    - dotnet publish -c Release -r win-x64 --output /dist ./Web/Web.csproj
+    - tar -czf ./app.tar /dist
+  artifacts:
+    paths:
+      - ./app.tar
+  environment: production

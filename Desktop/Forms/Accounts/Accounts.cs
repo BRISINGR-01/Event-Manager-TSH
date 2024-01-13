@@ -1,9 +1,7 @@
-﻿using Desktop.Forms;
-using Desktop.Forms.Accounts;
-using Domain.Managers;
+﻿using Desktop.Forms.Accounts;
 using Infrastructure;
+using Logic.Configuration;
 using Logic.Models;
-using Shared.Errors;
 
 namespace Desktop
 {
@@ -12,41 +10,42 @@ namespace Desktop
         private List<User> users;
         private readonly List<Branch> branches;
         private Manager manager;
-        private Guid? BranchId
-        {
-            get => branchCb.SelectedIndex < 1 ? null : ((Branch)branchCb.SelectedItem).Id;
-        }
-        public Accounts(Manager manager)
+        private HashingConfig config;
+        private Guid? BranchId => branchCb.SelectedIndex < 1 ? null : ((Branch)branchCb.SelectedItem).Id;
+        public Accounts(Manager manager, HashingConfig config)
         {
             InitializeComponent();
             editBranch.Visible = false;
             removeBtn.Visible = false;
 
             this.manager = manager;
+            this.config = config;
 
             var res = manager.Branch.GetAll();
             if (res.IsSuccessful)
             {
-                branches = res.Value!;
-            } else
+                branches = res.Value;
+            }
+            else
             {
-                MessageBox.Show(res.Error);
+                MessageBox.Show(res.ErrorMessage);
                 branches = new();
             }
-            
+
             foreach (var branch in branches)
             {
                 branchCb.Items.Add(branch);
             }
             if (branches.Count > 0) branchCb.SelectedIndex = 0;
 
-            var result = manager.User.GetAll();
+            var result = manager.User.GetAllFromBranch();
             if (result.IsSuccessful)
             {
-                users = result.Value!;
-            } else
+                users = result.Value;
+            }
+            else
             {
-                MessageBox.Show(result.Error);
+                MessageBox.Show(result.ErrorMessage);
                 users = new();
             }
             PopulateUsers();
@@ -67,56 +66,57 @@ namespace Desktop
             }
         }
 
-
         private void branchCb_SelectedIndexChanged(object sender, EventArgs e)
         {
-            var result = manager.User.GetAll(BranchId);
-            
+            var result = manager.User.GetAllFromBranch(BranchId);
+
             if (result.IsSuccessful)
             {
-                users = result.Value!;
+                users = result.Value;
                 PopulateUsers();
             }
             else
             {
-                MessageBox.Show(result.Error);
+                MessageBox.Show(result.ErrorMessage);
             }
         }
 
         private void addUserBtn_Click(object sender, EventArgs e)
         {
-            AddEditAccount form;
-            if (BranchId != null)
+            AddEditAccount form = BranchId != null ? new(branches, ((Branch)branchCb.SelectedItem)) : new(branches);
+            form.ShowDialog();
+
+            if (form.User == null) return;
+            var res = manager.User.Create(form.User);
+
+            if (res.IsUnSuccessful)
             {
-                form = new(branches, ((Branch)branchCb.SelectedItem));
+                MessageBox.Show(res.ErrorMessage);
+                return;
+            }
+
+            Credentials credentials = new(form.Email, form.Password, config);
+            res = manager.Credentials.Create(credentials);
+
+            if (res.IsUnSuccessful)
+            {
+                MessageBox.Show(res.ErrorMessage);
+                return;
+            }
+
+            var result = manager.User.GetAllFromBranch(BranchId);
+
+            if (result.IsSuccessful)
+            {
+                users = result.Value;
             }
             else
             {
-                form = new(branches);
+                MessageBox.Show(result.ErrorMessage);
+                users = new();
             }
-            form.ShowDialog();
-            if (form.User != null)
-            {
-                var res = manager.User.Create(form.User);
-                if (!res.IsSuccessful)
-                {
-                    MessageBox.Show(res.Error);
-                } else
-                {
-                    var result = manager.User.GetAll(BranchId);
-                    
-                    if (result.IsSuccessful)
-                    {
-                        users = result.Value!;
-                    }
-                    else
-                    {
-                        MessageBox.Show(result.Error);
-                        users = new();
-                    }
-                    PopulateUsers();
-                }
-            }
+
+            PopulateUsers();
         }
 
         private void removeBtn_Click(object sender, EventArgs e)
@@ -134,9 +134,15 @@ namespace Desktop
                 {
                     users.RemoveAt(index);
                     UsersList.Items.RemoveAt(index);
-                } else
+                }
+                else
                 {
-                    MessageBox.Show(res.Error);
+                    MessageBox.Show(res.Exception.Message);
+                }
+                res = manager.Credentials.Delete(users[index].Id);
+                if (res.IsUnSuccessful)
+                {
+                    MessageBox.Show(res.Exception.Message);
                 }
             }
         }
@@ -153,39 +159,38 @@ namespace Desktop
 
             User user = users[index];
 
-            AddEditAccount form;
-            if (BranchId != null)
-            {
-                form = new(user, branches, (Branch)branchCb.SelectedItem);
-            }
-            else
-            {
-                form = new(user, branches, branches[0]);
-            }
-            form.ShowDialog();
-            if (form.User == null) return;
+            AddEditAccount form = new(user, branches, BranchId != null ? (Branch)branchCb.SelectedItem : branches[0]);
+
+            if (form.ShowDialog() == DialogResult.Cancel || form.User == null) return;
 
             user = form.User;
 
             var res = manager.User.Update(user);
-            if (res.IsSuccessful)
+            if (res.IsUnSuccessful)
             {
-                var result = manager.User.GetAll(BranchId);
-
-                if (result.IsSuccessful)
-                {
-                    users = result.Value!;
-                }
-                else
-                {
-                    MessageBox.Show(result.Error);
-                    users = new();
-                }
-                PopulateUsers();
-            } else
-            {
-                MessageBox.Show(res.Error);
+                MessageBox.Show(res.Exception.Message);
+                return;
             }
+
+            res = manager.Credentials.Update(new Credentials(form.Email, form.Password, config, form.User.Id));
+            if (res.IsUnSuccessful)
+            {
+                MessageBox.Show(res.Exception.Message);
+                return;
+            }
+
+            var result = manager.User.GetAllFromBranch(BranchId);
+
+            if (result.IsSuccessful)
+            {
+                users = result.Value;
+            }
+            else
+            {
+                MessageBox.Show(result.ErrorMessage);
+                users = new();
+            }
+            PopulateUsers();
         }
 
         private void UsersList_SelectedIndexChanged(object sender, EventArgs e)

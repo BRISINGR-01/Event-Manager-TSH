@@ -1,14 +1,9 @@
-﻿using MySql.Data.MySqlClient;
-using Logic;
-using Infrastructure.Tables.Interfaces;
-
-namespace Infrastructure.Tables.Events
+﻿namespace Infrastructure.Tables.Events
 {
-    public class PaidEventTable : ITable
+    public static class PaidEventTable
     {
-        public string TableName { get => "paid_event"; }
-
-        public static readonly string EventId = "event_id";
+        public static readonly string TableName = "paid_event";
+        public static readonly string EventId = "timed_event_id";
         public static readonly string Price = "price";
         public static readonly string MaxParticipants = "max_participants";
     }

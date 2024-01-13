@@ -1,41 +1,35 @@
 ﻿using Logic.Interfaces.Repositories;
+using Logic.Utilities;
 using Shared;
+using Shared.Errors;
 
 namespace Domain.Managers
 {
     public class LocalDataManager
     {
-        private readonly ILocalRepository repository;
+        private readonly IConfigurationRepository repository;
 
-        public LocalDataManager(ILocalRepository repository)
+        public LocalDataManager(IConfigurationRepository repository)
         {
             this.repository = repository;
         }
 
-        public Guid? GetLastLoggedAs()
+        public Result<Guid> GetLastLoggedAs()
         {
-            try
+            return Result<Guid>.From(() =>
             {
-                string? id = repository.Read(Constants.LAST_LOGGED_KEY);
+                string id = repository.Read(Constants.LAST_LOGGED_KEY) ?? throw new NotFoundException();
 
-                if (id == null) return null;
-                
                 Guid Id = Guid.Parse(id);
-                if (Id == Guid.Empty) return null;
-                
+                if (Id == Guid.Empty) throw new NotFoundException();
+
                 return Guid.Parse(id);
-            } catch
-            {
-                return null;
-            }
+            });
         }
 
-        public void SetLastLoggedAs(Guid? id)
+        public Result SetLastLoggedAs(Guid? id)
         {
-            try
-            {
-                repository.Update(Constants.LAST_LOGGED_KEY, id.ToString());
-            } catch { }
+            return Result.From(() => repository.Update(Constants.LAST_LOGGED_KEY, id.ToString()));
         }
     }
 }

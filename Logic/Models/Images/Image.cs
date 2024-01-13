@@ -1,29 +1,19 @@
 ﻿using Logic.Interfaces;
-using Shared;
+using Logic.Utilities;
 using Shared.Enums;
 using Shared.Errors;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Logic.Models.Images
 {
-    public class Image: IEntity
+    public class Image : IEntity
     {
         public Guid Id { get; private set; }
+        public Guid BranchId { get; private set; }
         public byte[] Data { get; private set; }
         public string FilePath { get; private set; }
         public ImageType Type { get; private set; }
-        public Image(Guid id, string fileName)
-        {
-            FilePath = LocalPath.GuidToPath(id) + Path.GetExtension(fileName);
-            Id = id;
-            Data = Array.Empty<byte>();
-            Type = default;
-        }
-        public Image(Guid id, string fileName, Stream fs, ImageType type)
+        public static Image New(Guid imageId, Guid branchId, string fileName, Stream fs, ImageType type) => new(imageId, branchId, fileName, fs, type);
+        public Image(Guid imageId, Guid branchId, string fileName, Stream fs, ImageType type)
         {
             Type = type;
             try
@@ -36,8 +26,9 @@ namespace Logic.Models.Images
             {
                 throw new ClientException("Couldn't upload image");
             }
-            Id = id;
-            FilePath = LocalPath.GuidToPath(id) + Path.GetExtension(fileName);
+            Id = imageId;
+            BranchId = branchId;
+            FilePath = LocalPath.GuidToPath(imageId) + Path.GetExtension(fileName);
         }
     }
 }

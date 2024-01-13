@@ -1,8 +1,6 @@
 ﻿using Desktop.Forms;
 using Domain.Managers;
 using Logic.Models;
-using Shared.Errors;
-using static Desktop.Forms.LogIn;
 
 namespace Desktop
 {
@@ -26,7 +24,7 @@ namespace Desktop
             }
             else
             {
-                MessageBox.Show(res.Error);
+                MessageBox.Show(res.ErrorMessage);
                 branches = new();
             }
             PopulateBranchesList();
@@ -45,15 +43,15 @@ namespace Desktop
             AddBranch form = new();
             form.ShowDialog();
             if (string.IsNullOrEmpty(form.Name)) return;
-            
+
             Branch newBranch = new(form.Name);
             var res = branchManager.Create(newBranch);
-            if (!res.IsSuccessful)
+            if (res.IsUnSuccessful)
             {
-                MessageBox.Show(res.Error);
+                MessageBox.Show(res.Exception.Message);
                 return;
             }
-                
+
             int index = branches.FindIndex(branch => newBranch.Name[0].CompareTo(branch.Name[0]) <= 0);
             if (index == -1)
             {
@@ -61,7 +59,7 @@ namespace Desktop
                 branchesListBox.Items.Add(newBranch);
                 return;
             }
-                    
+
             branchesListBox.Items.Insert(index, newBranch);
         }
 
@@ -75,10 +73,11 @@ namespace Desktop
                 {
                     branches.RemoveAt(index);
                     branchesListBox.Items.RemoveAt(index);
-                } else
+                }
+                else
                 {
-                    MessageBox.Show(res.Error);
-                } 
+                    MessageBox.Show(res.Exception.Message);
+                }
             }
             else
             {
@@ -105,7 +104,7 @@ namespace Desktop
             }
             else
             {
-                MessageBox.Show(res.Error);
+                MessageBox.Show(res.ErrorMessage);
             }
         }
 
@@ -130,9 +129,10 @@ namespace Desktop
             if (res.IsSuccessful)
             {
                 branchesListBox.Items[index] = branches[index];
-            } else
+            }
+            else
             {
-                MessageBox.Show(res.Error);
+                MessageBox.Show(res.Exception.Message);
             }
         }
 

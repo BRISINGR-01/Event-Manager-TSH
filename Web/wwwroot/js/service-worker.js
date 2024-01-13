@@ -1,5 +1,4 @@
-﻿
-self.addEventListener("install", function (event) {
+﻿self.addEventListener("install", function (event) {
 	console.log("[ServiceWorker] Install");
 
 	self.skipWaiting();
@@ -9,8 +8,6 @@ self.addEventListener("activate", (event) => {
 	console.log("[ServiceWorker] Activate");
 	event.waitUntil(
 		(async () => {
-			// Enable navigation preload if it's supported.
-			// See https://developers.google.com/web/updates/2017/02/navigation-preload
 			if ("navigationPreload" in self.registration) {
 				await self.registration.navigationPreload.enable();
 			}
@@ -22,7 +19,6 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", function (event) {
-	// console.log('[Service Worker] Fetch', event.request.url);
 	if (event.request.mode === "navigate") {
 		event.respondWith(
 			(async () => {
@@ -46,5 +42,43 @@ self.addEventListener("fetch", function (event) {
 				}
 			})()
 		);
+	}
+});
+self.addEventListener('push', function (e) {
+	let payload;
+	try {
+		const { body, title } = JSON.parse(e.data?.text());
+		payload = { body, title };
+	} catch {
+		return;
+	}
+
+
+	var options = {
+		body: payload.body,
+        icon: "assets/icon-512.png",
+        data: {
+            dateOfArrival: Date.now()
+        },
+        actions: [
+            {
+                action: "explore", title: "Open",
+                icon: "asstes/contact.svg"
+            },
+            {
+                action: "close", title: "Close",
+                icon: "assets/gallery.svg"
+            },
+        ]
+    };
+	e.waitUntil(
+		self.registration.showNotification(payload.title, options)
+    );
+});
+
+self.addEventListener('notificationclick', function (e) {
+	e.notification.close();
+	if (e.action !== "close") {
+		clients.openWindow(e.request.url);
 	}
 });

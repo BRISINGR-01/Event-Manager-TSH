@@ -1,75 +1,80 @@
-﻿﻿using Logic.Managers;
-using Logic;
-using Logic.Models;
-using Shared.Errors;
-using Shared.Enums;
-using Logic.Interfaces.Repositories.Events;
+﻿using Logic.Interfaces.Repositories.Events;
+using Logic.Managers;
 using Logic.Models.Events;
+using Logic.Utilities;
+using Shared.Enums;
+using Shared.Errors;
 using System.Globalization;
-using Shared;
 
 namespace Domain.Managers
 {
-    public class EventManager: BaseManager<Event, IEventRepository>
+
+    public class EventManager : BaseDbManager<Event>
     {
+        private new readonly IEventRepository repository;
         public ParticipanceManager Participance { get; private set; }
-        public EventManager(IEventRepository repository, IEventParticipanceRepository participanceRepository, IdentityUser user) : base(repository, user)
+        public EventManager(IEventRepository repository, IEventParticipanceRepository participanceRepository) : base(repository)
         {
-            Participance = new(participanceRepository, user);
+            this.repository = repository;
+            Participance = new(participanceRepository);
         }
-        public new Result Create(Event @event)
+        public override Result Create(Event @event)
         {
-            var res = Result<bool>.From(() =>
+            return Result.From(() =>
             {
                 @event.Validate();
-                return  VerifiedRepository(UserRole.EventOrganizer).Create(@event);
-            }, CRUD.CREATE);
-             
-            return res.IsSuccessful && res.Value ? Result.Success : res.Fail;
+                if (!repository.Create(@event)) throw new ClientException("Couldn't create Event");
+            });
         }
-        public new Result Update(Event @event)
+        public Result<List<Event>> GetSuggestions(Guid branchId)
         {
-            var res = Result<bool>.From(() => {
-                @event.Validate(isUpdate: true);
-                return VerifiedRepository(UserRole.EventOrganizer).Update(@event);
-            }, CRUD.UPDATE);
-             
-            return res.IsSuccessful && res.Value ? Result.Success : res.Fail;
+            return Result<List<Event>>.From(() => repository.GetSuggestions(branchId));
         }
-        public Result<List<Event>> GetAllOfMonth(int month = 0)
-        {
-            return Result<List<Event>>.From(() => VerifiedRepository().GetMonthlyEvents(month));
-        }
-        public Result<Event?> GetBy(Guid id)
-        {
-            return Result<Event?>.From(() => {
-                var @event = VerifiedRepository().FindSingleBy(id);
 
-                if (@event is PaidEvent paidEvent && paidEvent.MaxParticipants != null)
+        public override Result Update(Event @event)
+        {
+            return Result.From(() =>
+            {
+                @event.Validate(isUpdate: true);
+                base.Update(@event);
+            });
+        }
+        public Result<List<Event>> GetAllOfMonth(int month, Guid branchId, EventsFilterEnum? filter)
+        {
+            return Result<List<Event>>.From(() => repository.GetMonthlyEvents(month, branchId, filter));
+        }
+        public Result<Event> GetBy(Guid id)
+        {
+            return Result<Event>.From(() =>
+            {
+                var @event = repository.GetById(id);
+
+                if (@event is PaidEvent paidEvent)
                 {
                     paidEvent.SetIsFullyBooked(IsFullyBooked(id, paidEvent.MaxParticipants));
-                    return paidEvent;
                 }
 
                 return @event;
             });
         }
-        public Result<bool> AlterParticipance(Guid userId, Guid eventId, EventParticipanceEnum eventParticipance)
+        public Result AlterParticipance(Guid userId, Guid eventId, EventParticipanceEnum eventParticipance)
         {
-            var participance = VerifiedRepository().Participance.GetEventUserParticipance(eventId, userId);
-            if (participance == null)
+            var participanceRes = Participance.GetEventUserParticipance(eventId, userId);
+            if (participanceRes.IsUnSuccessful)
             {
-                if (eventParticipance != EventParticipanceEnum.Signed) return Result<bool>.FailWith("You are not signed up yet");
+                if (eventParticipance != EventParticipanceEnum.Signed) return Result.FailWith("You are not signed up yet");
 
-                if (IsFullyBooked(eventId)) return Result<bool>.FailWith("Unfortunately the event is fully booked! You can try again later.");
-                
-                return Result<bool>.From(() => VerifiedRepository().Participance.Create(new(Helpers.NewGuid, eventId, userId, eventParticipance)));
+                if (IsFullyBooked(eventId)) return Result.FailWith("Unfortunately the event is fully booked! You can try again later.");
+
+                return Participance.Create(EventParticipance.New(eventId, userId, eventParticipance));
             }
 
-            if (eventParticipance == EventParticipanceEnum.None) return Result<bool>.From(() => VerifiedRepository().Participance.Delete(participance.Id));
+            if (eventParticipance == EventParticipanceEnum.None)
+            {
+                return Participance.Delete(participanceRes.Value.Id);
+            }
 
-            
-            return Result<bool>.From(() => VerifiedRepository().Participance.Update(new(participance.Id, participance.EventId, participance.UserId, eventParticipance)));            
+            return Participance.Update(new(participanceRes.Value.Id, participanceRes.Value.EventId, participanceRes.Value.UserId, eventParticipance));
         }
         private bool IsFullyBooked(Guid eventId, int? maxParticipants = null)
         {
@@ -77,18 +82,13 @@ namespace Domain.Managers
             {
                 var res = GetBy(eventId);
 
-                if (!res.IsSuccessful || res.Value == null) return false;
+                if (res.IsUnSuccessful) return false;
 
                 var @event = res.Value;
 
-                if (@event is PaidEvent paidEvent)
-                {
-                    maxParticipants = paidEvent.MaxParticipants;
-                }
-                else
-                {
-                    return false;
-                }
+                if (@event is not PaidEvent paidEvent) return false;
+
+                maxParticipants = paidEvent.MaxParticipants;
             }
 
             if (maxParticipants <= 0) return false;
@@ -97,37 +97,37 @@ namespace Domain.Managers
 
             return resPart.IsSuccessful && resPart.Value >= maxParticipants;
         }
-        public Result<List<Event>> GetOnGoing()
+        public Result<List<Event>> GetOnGoing(Guid branchId)
         {
-            return Result<List<Event>>.From(() => VerifiedRepository().GetOnGoing());
+            return Result<List<Event>>.From(() => repository.GetOnGoing(branchId));
         }
         public Result<Dictionary<string, int>> GetCountEventsPerMonth()
         {
+            return Result<Dictionary<string, int>>.From(GenerateStatistics);
+        }
+
+        private Dictionary<string, int> GenerateStatistics()
+        {
             List<string> monthNames = DateTimeFormatInfo.CurrentInfo.MonthNames.ToList();
 
-            return Result<Dictionary<string, int>>.From(() => {
-                Dictionary<string, int> res = new()
+            Dictionary<string, int> res = new()
                 {
                     { "Other", 0 }
                 };
-                foreach (var e in VerifiedRepository().GetAll())
-                {
-                    if (e is TimedEvent timedEvent) {
-                        string month = monthNames[timedEvent.Start.Month == -1 ? 11 : timedEvent.Start.Month - 1];
-                        if (!res.ContainsKey(month))
-                        {
-                            res.Add(month, 0);
-                        }
 
-                        res[month] += 1;
-                    } else
-                    {
-                        res["Other"] += 1 ;
-                    }
+            foreach (var e in repository.GetAll())
+            {
+                string month = "Other";
+                if (e is TimedEvent timedEvent)
+                {
+                    month = monthNames[timedEvent.Start.Month == -1 ? 11 : timedEvent.Start.Month - 1];
+                    if (!res.ContainsKey(month)) res.Add(month, 0);
                 }
 
-                return res;
-            });
+                res[month] += 1;
+            }
+
+            return res;
         }
     }
 }

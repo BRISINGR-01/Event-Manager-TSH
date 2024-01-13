@@ -1,20 +1,16 @@
-﻿using Shared.Errors;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Logic.Utilities;
+using Shared.Errors;
 
 namespace Logic.Models.Events
 {
-    public class PaidEvent: TimedEvent
+
+    public class PaidEvent : TimedEvent
     {
         public double Price { get; private set; }
         public int? MaxParticipants { get; private set; }
         public int? Percentage { get; private set; }
-        public PaidEvent(Guid id, Guid branchId, string title, string description, DateTime start, DateTime? end, string? venue, double price, int? maxParticipants): base(id, branchId, title, description, start, end, venue)
+        public static PaidEvent New(TimedEvent @event, double price, int? maxParticipants) => new(@event.Id, @event.BranchId, @event.Title, @event.Description, @event.Start, @event.End, @event.Venue, price, maxParticipants, @event.IsSuggestion);
+        public PaidEvent(Guid id, Guid branchId, string title, string description, DateTime start, DateTime? end, string? venue, double price, int? maxParticipants, bool isSuggestion) : base(id, branchId, title, description, start, end, venue, isSuggestion)
         {
             Price = price;
             MaxParticipants = maxParticipants;
@@ -25,6 +21,7 @@ namespace Logic.Models.Events
             if (Price <= 0) throw new ClientException("Cannot create a paid event which doesn't cost money!");
             if (MaxParticipants != null && MaxParticipants < 0) MaxParticipants = null;
         }
+
 
         public override void SetSigned(Result<int> res)
         {

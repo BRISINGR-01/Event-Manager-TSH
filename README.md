@@ -1,32 +1,42 @@
-# TSH - Event manager
+# TSH-2
 
-## About the project
-This is my assignment for the second semester at [Fontys University of Applied Sciences](https://fontys.edu/).
+## Set up
 
-During my stay at [The Social Hub](https://www.thesocialhub.co/) I helped with the organization of events and participated in them regularly.
-This allowed me to see how they were created, managed and promoted. The organizer used a couple of platforms and this caused problems, which I expirienced first hand. That inspired me to create this managment tool which would combine all of the features and more at one place and would have a more user-friendly design.
+`./hooks/set-up`
+
+## Build
+
+Windows:
+`docker build -f .\Web\Dockerfile -t web:latest .`
+
+Linux:
+`docker build -f ./Web/Dockerfile -t web:latest .`
 
 ## Run
-You need to setup a local mysql database and create tables accordingly to the db.sql. Then put the connection string in the app.config in the Web and Desktop solutions (whichever you want to run). The connection string must contain the following: "OldGuids=True;charset=utf8;"
-ex:
-```<?xml version='1.0' encoding='utf-8'?>  
-<configuration>    
-	<connectionStrings>  
-		<clear />  
-		<add name="Local"  
-		 providerName="System.Data.ProviderName"  
-		 connectionString="<connection details>;OldGuids=True;charset=utf8;"/>  
-		<add name="Online"  
-		providerName="System.Data.ProviderName"  
-		connectionString="<connection details>;OldGuids=True;charset=utf8"/>  
-	</connectionStrings>  
-</configuration>
-```  
 
-The following nuget packages in the specified solutions are required:  
-- MySql.Data - `Infrastructure` 
-- SixLabors.ImageSharp - `Infrastructure`  
-- bootstrap - `Web`  
+`docker compose up`
 
-## Architecture
-The project is divided into three layers: Presentation(Web + Desktop), Business(Logic), and Infrastructure(Data). It implements all the SOLID principles including dependency inversion which makes the unit testing of the logic layer with a mock data layer possible. The project includes two apps - [ASP.NET Razor pages](https://github.com/dotnet/razor) website and a [Winforms](https://github.com/dotnet/winforms) desktop application. Both share the same Logic and Data layers. For the database is used MySql, hosted on Fontys servers.
+### or docker run
+
+`docker run -it -p 5000:80 -p 5001:443 --name TSH web:latest`
+
+## Azure setup
+
+```bash
+docker run -it mcr.microsoft.com/azure-cli
+az login
+az account set --subscription 1c0ba348-e874-4a3d-b8c9-f51d3ec61022
+az group create --name fontys-group --location europe
+az container create --resource-group fontys-group --name tsh-2-container --image alexpopo`v33/tsh:latest`--dns-name-label tsh-2
+az acr create --resource-group fontys-group --name tsh-acr --sku Basic
+az acr login --name tsh-acr
+az acr show --name tsh-acr --query loginServer --output table
+docker tag tsh <acrLoginServer>/tsh:latest
+docker push <acrLoginServer>/aci-tutorial-app:v1
+az container create --resource-group myResourceGroup --name aci-tutorial-app --image <acrLoginServer>/aci-tutorial-app:v1 --cpu 1 --memory 1 --registry-login-server <acrLoginServer> --registry-username <service-principal-ID> --registry-password <service-principal-password> --ip-address Public --dns-name-label <aciDnsLabel> --ports 80
+
+```
+
+### clean up
+
+`az group delete --name fontys-group`

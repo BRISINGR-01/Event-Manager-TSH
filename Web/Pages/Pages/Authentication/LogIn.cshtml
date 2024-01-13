@@ -8,16 +8,16 @@
     <form method="post" asp-page-handler="LogIn">
         <!-- Email input -->
         <div class="form-outline mb-4">
-            <label asp-for="LoggedUser.Email" class="form-label"></label>
-            <span asp-validation-for="LoggedUser.Email"></span>
-            <input asp-for="LoggedUser.Email" class="form-control">
+            <label asp-for="User.Email" class="form-label"></label>
+            <span asp-validation-for="User.Email"></span>
+            <input asp-for="User.Email" class="form-control">
         </div>
 
         <!-- Password input -->
         <div class="form-outline mb-4">
-            <label asp-for="LoggedUser.Password" class="form-label"></label>
-            <span asp-validation-for="LoggedUser.Password"></span>
-            <input asp-for="LoggedUser.Password" type="password" class="form-control">
+            <label asp-for="User.Password" class="form-label"></label>
+            <span asp-validation-for="User.Password"></span>
+            <input asp-for="User.Password" type="password" class="form-control">
         </div>
         @if (Model.AreCredentialsWrong)
         {

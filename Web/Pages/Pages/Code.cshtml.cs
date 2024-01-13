@@ -1,18 +1,25 @@
+using Logic.Interfaces;
+using Logic.Utilities;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+using Web.Middlewares.Authentication;
 
 namespace Web.Pages.Pages
 {
     public class CodeModel : PageModelWrapper
     {
-        public string Id { get; private set; } = string.Empty;
+        public CodeModel(IManager manager, IAuthenticationContext ctx) : base(manager, ctx) { }
+        public string? Code { get; private set; }
         public IActionResult OnGetAsync()
         {
-            if (!Initiate()) return NotInitiated;
+            if (Ctx.User.IsEventOrganizer) return RedirectToPage("/Pages/CheckCode");
 
-            if (User.IsEventOrganizer) return RedirectToPage("/Pages/CheckCode");
+            var res = Manager.User.GetById(Ctx.User.Id);
 
-            Id = User.Id.ToString();
+            if (res.IsUnSuccessful) return HandleError(res.Plain);
+
+            Code = Encryption.Encrypt(res.Value.Id.ToString());
+
+            if (Code == null) return HandleError("An error occurred");
 
             return Page();
         }

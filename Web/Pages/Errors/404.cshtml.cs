@@ -1,16 +1,10 @@
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Org.BouncyCastle.Asn1.Ocsp;
-using System.Diagnostics;
+using Logic.Interfaces;
+using Web.Middlewares.Authentication;
 
 namespace Web.Pages.Errors
 {
     public class _404Model : PageModelWrapper
     {
-        public void OnGet()
-        {
-            Initiate();
-        }
+        public _404Model(IManager manager, IAuthenticationContext ctx) : base(manager, ctx) { }
     }
 }

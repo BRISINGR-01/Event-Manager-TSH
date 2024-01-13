@@ -1,13 +1,16 @@
-﻿using Logic.Models;
+﻿using Logic.Interfaces.Repositories.Base;
+using Logic.Models;
+using Shared.Enums;
 
 namespace Logic.Interfaces.Repositories
 {
-    public interface IUserRepository: IRepository<User>
+
+    public interface IUserRepository : IDbRepository<User>
     {
-        public User? GetBy(Guid id);
-        public bool Exists(User user);
-        public User? FindSingleBy(string email, string password);
-        public List<User> GetBranchContacts();
-        public List<User> FindManyBy(Guid? branchId = null);
+        public List<User> GetBranchContacts(Guid branchId);
+        public List<User> GetAllFromBranch(Guid? branchId = null);
+        public bool Subscribe(PushNotificationSubscription subscription);
+        public List<User> GetByRoles(List<UserRole> roles, Guid branchId);
+        public List<PushNotificationSubscription> GetSubscriptions(List<UserRole> roles, Guid branchId);
     }
 }

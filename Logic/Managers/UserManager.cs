@@ -1,56 +1,68 @@
-﻿using Logic.Managers;
-using Logic;
-using Logic.Interfaces.Repositories;
-using Shared.Enums;
-using Shared.Errors;
+﻿using Logic.Interfaces.Repositories;
+using Logic.Managers;
 using Logic.Models;
-using System.Xml.Linq;
-using System.Runtime.CompilerServices;
-using Logic.Interfaces;
+using Logic.Utilities;
+using Shared.Enums;
 
 namespace Domain.Managers
 {
-    public class UserManager : BaseManager<User, IUserRepository>
+    public class UserManager : BaseDbManager<User>
     {
-        public UserManager(IUserRepository repository, IdentityUser user) : base(repository, user) {
-            
-        }
-        public Result<List<User>> GetBranchContacts(Guid? branchId = null)
+        private readonly IUserRepository _repository;
+        private readonly ICredentialsRepository credentialsRepository;
+        public UserManager(IUserRepository repository, ICredentialsRepository credentialsRepository) : base(repository)
         {
-            return Result<List<User>>.From(() => VerifiedRepository().GetBranchContacts());
+            _repository = repository;
+            this.credentialsRepository = credentialsRepository;
         }
-        public Result<List<User>> GetAll(Guid? branchId = null)
+        public Result<List<User>> GetBranchContacts(Guid branchId)
         {
-            return Result<List<User>>.From(() => VerifiedRepository(UserRole.Administrator | UserRole.EventOrganizer).FindManyBy(branchId));
+            return Result<List<User>>.From(() => _repository.GetBranchContacts(branchId));
+        }
+        public Result<List<User>> GetAllFromBranch(Guid? branchId = null)
+        {
+            return Result<List<User>>.From(() => _repository.GetAllFromBranch(branchId));
         }
 
         public override Result Create(User user)
         {
-            if (VerifiedRepository().Exists(user))
+            return Result.From(() =>
+           {
+               user.Validate();
+               if (!_repository.Create(user))
+               {
+                   credentialsRepository.Delete(user.Id);
+                   throw new Exception("Couldn't create user");
+               }
+           });
+        }
+        public Result Create(User user, Credentials credentials)
+        {
+            var getByEmail = Result<Credentials>.From(() => credentialsRepository.GetByEmail(credentials.Email));
+            if (getByEmail.IsSuccessful)
             {
                 return Result.FailWith("A user with this email already exists");
-            } else
-            {
-                var res = Result<bool>.From(() =>
-                {
-                    user.Validate();
-                    return VerifiedRepository(UserRole.Administrator).Create(user);
-                }, CRUD.CREATE, "user");
-
-                return res.IsSuccessful && res.Value ? Result.Success : res.Fail;
             }
+
+            var res = Result.From(() => credentialsRepository.Create(credentials));
+
+            return res.IsSuccessful ? Create(user) : res;
         }
-        public Result<User?> GetById(Guid id)
+        public Result<List<User>> GetByRoles(List<UserRole> roles, Guid branchId)
         {
-            return Result<User?>.From(() => VerifiedRepository().GetBy(id));
+            if (roles.Count == 0) return Result<List<User>>.From(() => new());
+
+            return Result<List<User>>.From(() => _repository.GetByRoles(roles, branchId));
         }
-        public static Result<User?> Get(IUserRepository repository, Guid id)
+        public Result<List<PushNotificationSubscription>> GetSubscriptions(List<UserRole> roles, Guid branchId)
         {
-            return Result<User?>.From(() => repository.FindSingleBy(id));
+            if (roles.Count == 0) return Result<List<PushNotificationSubscription>>.From(() => new());
+
+            return Result<List<PushNotificationSubscription>>.From(() => _repository.GetSubscriptions(roles, branchId));
         }
-        public static Result<User?> CheckCredentials(IUserRepository repository, string email, string password)
+        public Result Subscribe(PushNotificationSubscription subscription)
         {
-            return Result<User?>.From(() => repository.FindSingleBy(email, password));
+            return Result.From(() => _repository.Subscribe(subscription));
         }
     }
 }

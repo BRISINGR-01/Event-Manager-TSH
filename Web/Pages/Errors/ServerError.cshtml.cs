@@ -1,13 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+using Logic.Interfaces;
+using Web.Middlewares.Authentication;
 
 namespace Web.Pages.Errors
 {
     public class ServerErrorModel : PageModelWrapper
     {
-        public void OnGet()
-        {
-            Initiate();
-        }
+        public ServerErrorModel(IManager manager, IAuthenticationContext ctx) : base(manager, ctx) { }
     }
 }

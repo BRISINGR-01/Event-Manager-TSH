@@ -1,10 +1,8 @@
-using Domain.Managers;
-using Logic;
 using Logic.Models.Events;
+using Mocks;
 using Shared;
 using Shared.Enums;
 using Shared.Errors;
-using System.Data.SqlTypes;
 
 namespace Unit_testing.Tests
 {
@@ -23,9 +21,10 @@ namespace Unit_testing.Tests
                 null,
                 null,
                 -1,
-                null
+                null,
+                false
             );
-            
+
             Assert.ThrowsException<ClientException>(() => paidEvent.Validate());
         }
         [TestMethod]
@@ -40,9 +39,10 @@ namespace Unit_testing.Tests
                 null,
                 null,
                 1,
-                -1
+                -1,
+                false
             );
-            
+
             paidEvent.Validate();
 
             Assert.IsNull(paidEvent.MaxParticipants);
@@ -57,9 +57,10 @@ namespace Unit_testing.Tests
                 "desc",
                 DateTime.Now.AddDays(2),
                 DateTime.Now.AddDays(1),
-                null
+                null,
+                false
             );
-            
+
             timedEvent.Validate();
 
             Assert.IsNull(timedEvent.End);
@@ -74,9 +75,10 @@ namespace Unit_testing.Tests
                 "desc",
                 DateTime.Now.AddDays(-2),
                 DateTime.Now.AddDays(-1),
-                null
+                null,
+                false
             );
-            
+
             Assert.ThrowsException<ClientException>(() => timedEvent.Validate());
         }
         [TestMethod]
@@ -89,7 +91,8 @@ namespace Unit_testing.Tests
                 "desc",
                 DateTime.Now.AddDays(-2),
                 DateTime.Now.AddDays(-1),
-                null
+                null,
+                false
             );
 
             Exception? exc = null;
@@ -97,7 +100,8 @@ namespace Unit_testing.Tests
             try
             {
                 timedEvent.Validate(true);
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 exc = ex;
             }
@@ -108,21 +112,20 @@ namespace Unit_testing.Tests
         public void IsFullyBooked()
         {
             var eventId = Helpers.NewGuid;
-            var brnachId = Helpers.NewGuid;
-            var userId = Guid.Parse("9d1acbca-640b-48cb-9421-adf9a863f9bd");
             Manager.Event.Create(new PaidEvent(
                 eventId,
-                brnachId,
+                MockData.BranchIds[0],
                 "title",
                 "desc",
                 DateTime.Now,
                 null,
                 null,
                 1,
-                1
+                1,
+                false
             ));
 
-            Manager.Event.AlterParticipance(userId, eventId, EventParticipanceEnum.Signed);
+            Manager.Event.AlterParticipance(MockData.UserIds[0], eventId, EventParticipanceEnum.Signed);
             var res = Manager.Event.GetBy(eventId);
 
             Assert.IsTrue(res.IsSuccessful);
@@ -132,20 +135,19 @@ namespace Unit_testing.Tests
         public void Percentage()
         {
             var eventId = Helpers.NewGuid;
-            var brnachId = Helpers.NewGuid;
-            var userId = MockRepository.UserFirst.Id;
             Manager.Event.Create(new PaidEvent(
                 eventId,
-                brnachId,
+                MockData.BranchIds[0],
                 "title",
                 "desc",
                 DateTime.Now,
                 null,
                 null,
                 1,
-                10
+                10,
+                false
             ));
-            Manager.Event.AlterParticipance(userId, eventId, EventParticipanceEnum.Signed);
+            Manager.Event.AlterParticipance(MockData.UserIds[0], eventId, EventParticipanceEnum.Signed);
             Manager.Event.AlterParticipance(Helpers.NewGuid, eventId, EventParticipanceEnum.Signed);
 
             var res = Manager.Event.GetBy(eventId);
@@ -153,7 +155,7 @@ namespace Unit_testing.Tests
             Assert.IsTrue(res.IsSuccessful);
             Assert.IsInstanceOfType(res.Value, typeof(PaidEvent));
 
-            PaidEvent paidEvent = (PaidEvent)res.Value!;
+            PaidEvent paidEvent = (PaidEvent)res.Value;
             paidEvent.SetSigned(Manager.Event.Participance.GetAllSignedForEvent(eventId));
 
             Assert.AreEqual(paidEvent.Percentage, 20);

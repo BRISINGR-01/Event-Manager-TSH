@@ -1,19 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 
 namespace Web.ViewModels
 {
-    public class EventViewModel: IViewModel
+    public class EventViewModel
     {
-        public Guid Id { get; set; }
-        public Guid BranchId { get; set; }
         [DataType(DataType.Text)]
         public string Title { get; set; }
         [DataType(DataType.MultilineText)]
         public string Description { get; set; }
         [DataType(DataType.Upload), FromForm(Name = "Image")]
-        public IFormFile? Image { get ; set; }
+        public IFormFile? Image { get; set; }
         [DataType(DataType.DateTime)]
         public DateTime? Start { get; set; }
         [DataType(DataType.DateTime)]
@@ -26,10 +23,8 @@ namespace Web.ViewModels
         [Range(0, 32767)]
         public int? MaxParticipants { get; set; }
 
-        public EventViewModel(Guid id, Guid branchId, string title, string description, IFormFile? image, DateTime start, DateTime? end, string? venue, double? price, int? maxParticipants)
+        public EventViewModel(string title, string description, IFormFile? image, DateTime start, DateTime? end, string? venue, double? price, int? maxParticipants)
         {
-            Id = id;
-            BranchId = branchId;
             Title = title;
             Description = description;
             Image = image;
@@ -41,8 +36,6 @@ namespace Web.ViewModels
         }
         public EventViewModel()
         {
-            Id = Guid.Empty;
-            BranchId = Guid.Empty;
             Title = string.Empty;
             Description = string.Empty;
             Image = default;

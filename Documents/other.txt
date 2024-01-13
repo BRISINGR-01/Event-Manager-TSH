@@ -1,0 +1,17 @@
+git: https://git.fhict.nl/I502430/zoo-bazar-s2-05
+website:  https://i502430.luna.fhict.nl/
+
+
+credentials:
+
+student@email
+student
+
+student.comitee@email
+studentcomitee
+
+event.organizer@email
+eventorganizer
+
+admin@email
+admin

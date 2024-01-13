@@ -1,7 +1,5 @@
-using Domain.Managers;
-using Logic;
 using Logic.Models;
-using Shared.Enums;
+using Logic.Utilities;
 using Shared.Errors;
 
 namespace Unit_testing.Tests
@@ -12,56 +10,42 @@ namespace Unit_testing.Tests
         [TestMethod]
         public void AccessDeniedException()
         {
-            var res = Result<bool>.From(() => throw new AccessDeniedException());
+            var res = Result.From(() => throw new AccessDeniedException());
             Assert.IsFalse(res.IsSuccessful);
-            Assert.IsNotNull(res.Redirection);
-            Assert.IsTrue(res.Redirection.EndsWith("AccessDenied"));
-            Assert.AreEqual(res.Error, "You are not allowed to execute this action");
+            Assert.IsNotNull(res.ErrorMessage);
+            Assert.IsTrue(res.Exception is AccessDeniedException);
+            Assert.IsTrue(res.ErrorMessage.StartsWith("Access Denied to an unauthenticated user"));
         }
         [TestMethod]
         public void ServerException()
         {
-            var res = Result<bool>.From(() => throw new ServerException(""));
+            var res = Result.From(() => throw new ServerException("Db is down"));
             Assert.IsFalse(res.IsSuccessful);
-            Assert.IsNotNull(res.Redirection);
-            Assert.IsTrue(res.Redirection.EndsWith("ServerError"));
-            Assert.IsNull(res.Error);
+            Assert.IsTrue(res.Exception is ServerException);
+            Assert.IsNotNull(res.ErrorMessage);
         }
         [TestMethod]
         public void ClientException()
         {
             string message = "Error to show to user";
-            var res = Result<bool>.From(() => throw new ClientException(message));
+            var res = Result.From(() => throw new ClientException(message));
             Assert.IsFalse(res.IsSuccessful);
-            Assert.IsNull(res.Redirection);
-            Assert.AreEqual(res.Error, message);
+            Assert.AreEqual(res.ErrorMessage, message);
         }
         [TestMethod]
         public void DeveloperException()
         {
-            var res = Result<User>.From(() => throw new DeveloperException("Some hidden error"), CRUD.DELETE, "user");
+            var res = Result<User>.From(() => throw new DeveloperException("Some hidden error"));
             Assert.IsFalse(res.IsSuccessful);
-            Assert.IsTrue(res.ErrorIsDefault);
-            Assert.IsNull(res.Redirection);
-            Assert.AreEqual(res.Error, "A problem occurred while deleting the user");
+            Assert.IsFalse(res.Exception is DeveloperException);
+            Assert.AreEqual("An error occurred", res.ErrorMessage);
         }
         [TestMethod]
-        public void ExceptionWithArea()
+        public void NotCustomException()
         {
-            var res = Result<User>.From(() => throw new AccessViolationException("Some hidden error"), area: "user");
+            var res = Result<User>.From(() => throw new AccessViolationException("Some hidden error"));
             Assert.IsFalse(res.IsSuccessful);
-            Assert.IsTrue(res.ErrorIsDefault);
-            Assert.IsNull(res.Redirection);
-            Assert.AreEqual(res.Error, "A problem occurred while getting the user");
-        }
-        [TestMethod]
-        public void ExceptionWithAction()
-        {
-            var res = Result<User>.From(() => throw new AccessViolationException("Some hidden error"), action: CRUD.UPDATE);
-            Assert.IsFalse(res.IsSuccessful);
-            Assert.IsTrue(res.ErrorIsDefault);
-            Assert.IsNull(res.Redirection);
-            Assert.AreEqual(res.Error, "A problem occurred while updating the user");
+            Assert.AreEqual("An error occurred", res.ErrorMessage);
         }
     }
 }

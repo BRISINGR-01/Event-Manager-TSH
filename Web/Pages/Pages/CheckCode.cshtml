@@ -1,4 +1,4 @@
-﻿@page "{id?}"
+﻿@page "{code?}"
 @model Web.Pages.Pages.CheckCodeModel
 @{
     ViewData["Title"] = "Check Code";
@@ -14,11 +14,11 @@
         <p>@Event.Title</p>
     }
 
-    @if (Model.Id == null) {
+    @if (Model.Code == null) {
         <div id="reader" width="600px"></div>
     } else if (Model.CheckedUser != null) {
-        <div class="bg-@(Model.IsSigned ? "success" : "danger")">
-            @if (Model.IsSigned)
+        <div class="bg-@(Model.HasUserSigned ? "success" : "danger")">
+            @if (Model.HasUserSigned)
             {
                 <div>@Model.CheckedUser.UserName is signed!</div>
             } else
@@ -26,13 +26,14 @@
                 <div>@Model.CheckedUser.UserName is not signed!</div>
             }
         </div>
+    } else
+    {
+       <h1>Invalid code</h1> 
     }
 }
 
-
 <script>
     function onScanSuccess(decodedText, decodedResult) {
-        // handle the scanned code as you like, for example:
         try {
             const url = new URL(decodedText);
             if (url.origin === window.location.origin) window.location.href = url.href;

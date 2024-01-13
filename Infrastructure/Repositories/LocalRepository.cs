@@ -1,30 +1,20 @@
-﻿using System.Text.Json.Nodes;
-using System.Text.Json;
-using MySql.Data.MySqlClient;
+﻿using Logic.Interfaces.Repositories;
 using System.Configuration;
-using Logic.Interfaces.Repositories;
 
-namespace Infrastructure.DatabaseManagers
+namespace Infrastructure.Repositories
 {
-    public class LocalRepository: ILocalRepository
+    public class LocalRepository : IConfigurationRepository
     {
-        public void Update(string key, string? value)
+        public bool Update(string key, string? value)
         {
-            try
-            {
-                ConfigurationManager.AppSettings.Set(key, value);
-            }
-            catch { }
+            ConfigurationManager.AppSettings.Set(key, value);
+
+            return true;
         }
 
         public string? Read(string key)
         {
-            try
-            {
-                return ConfigurationManager.AppSettings.Get(key);
-            } catch {
-                return null;
-            }
+            return ConfigurationManager.AppSettings.Get(key);
         }
     }
 }

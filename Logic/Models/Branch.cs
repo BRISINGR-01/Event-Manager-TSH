@@ -2,6 +2,7 @@
 
 namespace Logic.Models
 {
+
     public class Branch: IEntity
     {
         public Guid Id { get; private set; }

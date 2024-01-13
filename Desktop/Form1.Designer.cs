@@ -1,6 +1,6 @@
 ﻿namespace Desktop
 {
-    partial class Form1
+    partial class App
     {
         /// <summary>
         /// Required designer variable.

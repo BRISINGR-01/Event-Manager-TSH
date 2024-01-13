@@ -1,12 +1,4 @@
-﻿using Domain.Managers;
-using Infrastructure;
-using Logic.Models;
-using Shared.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Shared.Enums;
 
 namespace Unit_testing
 {
@@ -14,7 +6,11 @@ namespace Unit_testing
     public class BaseTester
     {
         protected Manager Manager = new();
-
+        [TestInitialize]
+        public void Initialize()
+        {
+            Manager.Reset();
+        }
         protected void SetUserRole(UserRole role) => Manager.SetUserRole(role);
     }
 }

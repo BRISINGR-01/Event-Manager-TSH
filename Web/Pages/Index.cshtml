@@ -1,2 +1,7 @@
 ﻿@page
 @model IndexModel
+<div hidden id="applicationServerKey">@ViewData["applicationServerKey"]</div>
+<script>
+    window.userId = "@Model.Ctx.User.Id.ToString()";
+</script>
+<script type="text/javascript" src="~/js/push-notifications.js" asp-append-version="true"></script>

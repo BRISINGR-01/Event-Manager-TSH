@@ -2,6 +2,7 @@ html, body, allContainer {
     margin: 0;
     width: 100vw;
     min-height: 100vh;
+    height: 100vh;
     max-width: 100vw;
     overflow-x: hidden;
 }
@@ -13,6 +14,10 @@ html, body, allContainer {
     --pink: #ff9ab0;
     --blue: #0071ff;
     --green: #00953c;
+}
+
+body {
+    background: var(--yellow) !important;
 }
 
 .bg-yellow {

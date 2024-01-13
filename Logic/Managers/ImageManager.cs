@@ -1,24 +1,23 @@
-﻿using Logic.Managers;
-using Logic;
-using Logic.Models;
-using Logic.Models.Images;
-using Logic.Models.Events;
-using static System.Net.Mime.MediaTypeNames;
-using Shared;
-using Shared.Errors;
+﻿using Logic.Interfaces.Repositories.Images;
+using Logic.Utilities;
 using Shared.Enums;
-using Logic.Interfaces.Repositories;
 
 namespace Domain.Managers
 {
-    public class ImageManager : BaseManager<Logic.Models.Images.Image, IImageRepository>
+    public class ImageManager
     {
-        public ImageManager(IImageRepository repository, IdentityUser user) : base(repository, user) { }
-        public new Result Create(Logic.Models.Images.Image image)
+        private IImageRepository repository;
+        public ImageManager(IImageRepository repository)
         {
-            var res = Result<bool>.From(() => VerifiedRepository().Create(image), CRUD.CREATE, "image");
-
-            return res.IsSuccessful && res.Value ? Result.Success : res.Fail;
+            this.repository = repository;
+        }
+        public Result Create(Logic.Models.Images.Image image)
+        {
+            return Result.From(() => repository.Create(image));
+        }
+        public Result DeleteType(Guid id, ImageType type)
+        {
+            return Result.From(() => repository.DeleteType(id, type));
         }
     }
 }

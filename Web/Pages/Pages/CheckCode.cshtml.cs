@@ -1,76 +1,57 @@
-using Logic;
+using Logic.Interfaces;
 using Logic.Models;
 using Logic.Models.Events;
+using Logic.Utilities;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Shared.Enums;
+using Web.Middlewares.Authentication;
 
 namespace Web.Pages.Pages
 {
     public class CheckCodeModel : PageModelWrapper
     {
+        public CheckCodeModel(IManager manager, IAuthenticationContext ctx) : base(manager, ctx, UserRole.Student) { }
         [BindProperty(SupportsGet = true)]
-        public string? Id { get; set; }
+        public string? Code { get; set; }
         public List<Event> Events { get; private set; } = new();
         public User? CheckedUser { get; private set; }
-        public bool IsSigned { get; private set; }
+        public bool HasUserSigned { get; private set; } = false;
         public IActionResult OnGet()
         {
-            if (!Initiate()) return NotInitiated;
+            var eventRes = Manager.Event.GetOnGoing(Ctx.User.BranchId);
 
-            var res = Manager.Event.GetOnGoing();
+            if (!eventRes.IsSuccessful) return HandleError(eventRes.Plain);
 
-            if (!res.IsSuccessful) return HandleError(res.Plain);
+            Events = eventRes.Value;
 
-            Events = res.Value;
+            if (Events.Count == 0 || Code == null) return Page();
 
-            if (Guid.TryParse(Id, out var userId) && Events.Count != 0)
+            var result = Encryption.Decrypt(Code);
+
+            if (result == null) return Page();
+
+            var userRes = Manager.User.GetById(Guid.Parse(result));
+
+            if (userRes.IsUnSuccessful) return Page();
+
+            CheckedUser = userRes.Value;
+
+            foreach (var Event in Events)
             {
-                var userRes = Infrastructure.Manager.UserGet(userId);
+                var participanceRes = Manager.Event.Participance.GetEventUserParticipance(Event.Id, userRes.Value.Id);
 
-                if (!userRes.IsSuccessful) return HandleError(res.Plain);
+                if (participanceRes.IsUnSuccessful) return HandleError(participanceRes.Plain);
 
-                CheckedUser = userRes.Value;
-
-                if (CheckedUser == null)
+                if (participanceRes.Value.State == EventParticipanceEnum.Signed)
                 {
-                    Error = "Couldn't find user";
-                    return Page();
+                    HasUserSigned = true;
+                    Manager.Event.AlterParticipance(userRes.Value.Id, Event.Id, EventParticipanceEnum.Present);
                 }
-
-                foreach (var Event in Events)
+                else if (participanceRes.Value.State == EventParticipanceEnum.Present)
                 {
-                    var participanceRes = Manager.Event.Participance.GetEventUserState(Event.Id, userId);
-
-                    if (!participanceRes.IsSuccessful)
-                    {
-                        if (participanceRes.ErrorIsDefault)
-                        {
-                            Error = "Sorry, but an error occured while checking the code";
-                            return Page();
-                        }
-                        else
-                        {
-                            return HandleError(participanceRes.Plain);
-                        }
-                    }
-
-                    if (participanceRes.Value?.State == EventParticipanceEnum.Signed)
-                    {
-                        IsSigned = true;
-                        Manager.Event.AlterParticipance(userId, Event.Id, EventParticipanceEnum.Present);
-                    }
-                    else if (participanceRes.Value?.State == EventParticipanceEnum.Present)
-                    {
-                        IsSigned = true;
-                        Manager.Event.AlterParticipance(userId, Event.Id, EventParticipanceEnum.Present);
-                    }
-                    return Page();
+                    HasUserSigned = true;
+                    Manager.Event.AlterParticipance(userRes.Value.Id, Event.Id, EventParticipanceEnum.Present);
                 }
-            }
-            else if (Id != null)
-            {
-                return RedirectToPage("/Pages/CheckCode", new { id = (string?)null });
             }
 
             return Page();

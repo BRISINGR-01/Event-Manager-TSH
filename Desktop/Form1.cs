@@ -1,31 +1,32 @@
 using Desktop.Forms;
-using Domain.Managers;
 using Infrastructure;
-using Infrastructure.DatabaseManagers;
+using Logic.Configuration;
 using Logic.Models;
-using Shared;
-using Shared.Errors;
+using Logic.Utilities;
 
 namespace Desktop
 {
-    public partial class Form1 : Form
+    public partial class App : Form
     {
-        private Manager? manager;
-        public Form1()
+        private Manager manager;
+        private HashingConfig hashingConfig;
+        public App(Manager manager, HashingConfig hashingConfig)
         {
+            this.hashingConfig = hashingConfig;
+            this.manager = manager;
             InitializeComponent();
-            Guid? currentUserId = Manager.Local.GetLastLoggedAs();
-            if (currentUserId == null)
+            Result<Guid> getLastLoggedAs = manager.Local.GetLastLoggedAs();
+            //Result<Guid> getLastLoggedAs = Result<Guid>.From(() => manager.User.GetAll().Value.Find(w => w.Role == Shared.Enums.UserRole.Administrator)!.Id);
+            if (getLastLoggedAs.IsUnSuccessful)
             {
                 SwitchPanel<LogIn>();
             }
             else
             {
-                var result = Manager.UserGet((Guid)currentUserId);
+                var result = manager.User.GetById(getLastLoggedAs.Value);
 
-                if (result.IsSuccessful && result.Value != null)
+                if (result.IsSuccessful)
                 {
-                    manager = new(result.Value);
                     userNameLabel.Text = result.Value.UserName;
                     SwitchPanel<Branches>();
                 }
@@ -38,20 +39,12 @@ namespace Desktop
 
         private void SwitchPanel<T>(Branch? branch = null) where T : UserControl
         {
-            UserControl page;
-            try
+            UserControl page = typeof(T).Name switch
             {
-                page = typeof(T).Name switch
-                {
-                    "Accounts" => manager != null ? new Accounts(manager) : throw new Exception(),
-                    "Branches" => manager != null ? new Branches(manager.Branch) : throw new Exception(),
-                    "LogIn" => new LogIn(),
-                    _ => throw new Exception()
-                };
-            } catch
-            {
-                page = new LogIn();
-            }
+                "Accounts" => new Accounts(manager, hashingConfig),
+                "Branches" => new Branches(manager.Branch),
+                _ => new LogIn()
+            };
 
             if (page is LogIn logIn)
             {
@@ -72,16 +65,19 @@ namespace Desktop
             {
                 accounts.SetDefaultBranch(branch);
             }
+
             var buttons = new List<Button>
             {
                 AccountsBtn,
                 BranchesBtn,
                 LogOutBtn
             };
+
             foreach (var btn in buttons)
             {
                 btn.BackColor = Color.FromArgb(46, 46, 46);
             }
+
             switch (typeof(T).Name)
             {
                 case "LogIn":
@@ -111,28 +107,30 @@ namespace Desktop
             SwitchPanel<Accounts>();
         }
 
-        private bool CheckCredentials(string userName, string password)
+        private bool CheckCredentials(string email, string password)
         {
-            var result = Manager.CheckCredentials(userName, password);
-            
-            if (result.IsSuccessful)
-            {
-                User? user = result.Value;
+            var result = manager.Credentials.GetByEmail(email);
 
-                if (user != null)
-                {
-                    Manager.Local.SetLastLoggedAs(user.Id);
-                    manager = new(user);
-                    userNameLabel.Text = user.UserName;
-                    SwitchPanel<Branches>();
-                }
-                return user == null;
-            } else
+            if (result.IsUnSuccessful)
             {
-                MessageBox.Show(result.Error);
+                MessageBox.Show(result.ErrorMessage);
                 return false;
             }
+
+            var credentials = result.Value;
+            credentials.Configure(hashingConfig);
+            credentials.VerifyPassword(password);
+
+            manager.Local.SetLastLoggedAs(credentials.Id);
+
+            var userRes = manager.User.GetById(credentials.Id);
+            if (userRes.IsUnSuccessful) return false;
+
+            SwitchPanel<Branches>();
+
+            return true;
         }
+
         private void SelectBranch(Branch branch)
         {
             SwitchPanel<Accounts>(branch);
@@ -140,7 +138,7 @@ namespace Desktop
 
         private void LogOutBtn_Click(object sender, EventArgs e)
         {
-            Manager.Local.SetLastLoggedAs(null);
+            manager.Local.SetLastLoggedAs(null);
             SwitchPanel<LogIn>();
         }
     }

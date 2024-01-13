@@ -1,19 +1,18 @@
-using Microsoft.AspNetCore.Authentication;
+using Logic.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Shared;
+using Web.Middlewares.Authentication;
 
 namespace Web.Pages.Authentication
 {
-    public class LogOutModel : PageModel
+    public class LogOutModel : PageModelWrapper
     {
-        public async Task<IActionResult> OnGetAsync()
+        public LogOutModel(IManager manager, IAuthenticationContext ctx) : base(manager, ctx) { }
+        public IActionResult OnGet()
         {
-            await HttpContext.SignOutAsync();
-            Response.Cookies.Delete(Constants.EmailCookie);
-            Response.Cookies.Delete(Constants.PasswordCookie);
+            Response.Cookies.Delete(Constants.TokenCookie);
             HttpContext.Session.Clear();
-            return RedirectToPage("/Pages/Authentication/LogIn");
+            return RedirectToLogIn;
         }
     }
 }

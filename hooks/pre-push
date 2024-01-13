@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo $(docker container remove gitlab-runner)
+echo $(docker run -i --name gitlab-runner -v /var/run/docker.sock:/var/run/docker.sock -v gitlab-runner-config:/etc/gitlab-runner --mount type=bind,source="$(pwd)"/target,target=/dist gitlab/gitlab-runner:latest)

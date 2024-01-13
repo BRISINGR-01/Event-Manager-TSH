@@ -1,32 +1,29 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Shared.Enums;
-using Shared;
-using Web.ViewModels;
+using Logic.Interfaces;
 using Logic.Models.Events;
+using Logic.Models.Images;
+using Microsoft.AspNetCore.Mvc;
+using Shared.Enums;
+using Web.Middlewares.Authentication;
+using Web.ViewModels;
 
 namespace Web.Pages.Events
 {
     public class EditModel : PageModelWrapper
     {
+        public EditModel(IManager manager, IAuthenticationContext ctx) : base(manager, ctx, UserRole.EventOrganizer) { }
         [BindProperty(SupportsGet = true)]
         public string? Id { get; set; }
         [BindProperty]
-        public EventViewModel EventModel { get; set; } = new();
+        public EventViewModel EventViewModel { get; set; } = new();
+
         public Event? Event { get; set; }
         public IActionResult OnGet()
         {
-            if (!Initiate()) return NotInitiated;
-
-            if (!Guid.TryParse(Id, out var id)) return RedirectToPage("/Pages/Events/List");
+            if (!Guid.TryParse(Id, out var id)) return RedirectToPage(Utilities.HomeUrl);
 
             var res = Manager.Event.GetBy(id);
 
-            if (!res.IsSuccessful || res.Value == null)
-            {
-                Error = "Cannot find event";
-                return Page();
-            }
+            if (res.IsUnSuccessful) return RedirectToPage(Utilities.HomeUrl);
 
             Event = res.Value;
 
@@ -34,38 +31,49 @@ namespace Web.Pages.Events
         }
         public IActionResult OnPost()
         {
-            if (!Initiate()) return NotInitiated;
             if (!ModelState.IsValid) return Page();
-            if (!Guid.TryParse(Id, out var id)) return RedirectToPage("/Pages/Events/List");
+            if (!Guid.TryParse(Id, out var id)) return RedirectToPage(Utilities.HomeUrl);
 
-            EventModel.Id = id;
-            EventModel.BranchId = User.BranchId;
-
-            if (EventModel.Image != null)
+            if (EventViewModel.Image != null)
             {
-                var imageRes = Manager.Image.Update(new Logic.Models.Images.Image(EventModel.Id, EventModel.Image.FileName, EventModel.Image.OpenReadStream(), ImageType.Background));
-                if (!imageRes.IsSuccessful) return HandleError(imageRes);
+                var imageRes = Manager.Image.Create(Image.New(id, Ctx.User.BranchId, EventViewModel.Image.FileName, EventViewModel.Image.OpenReadStream(), ImageType.Background));
+                if (imageRes.IsUnSuccessful) return HandleError(imageRes);
             }
 
-            var res = Manager.Event.Update(EventModel.Map());
-            if (!res.IsSuccessful) return HandleError(res);
+            Event @event = new(id, Ctx.User.BranchId, EventViewModel.Title, EventViewModel.Description, EventViewModel.Venue, false);
 
-            return RedirectToPage("/Pages/Events/List");
+            if (EventViewModel.Start != null)
+            {
+                @event = TimedEvent.New(
+                    @event,
+                    (DateTime)EventViewModel.Start,
+                    EventViewModel.End
+                );
+                if (EventViewModel.Price != null)
+                {
+                    @event = PaidEvent.New(
+                        (TimedEvent)@event,
+                        (double)EventViewModel.Price,
+                        EventViewModel.MaxParticipants
+                    );
+                }
+            }
+
+            var res = Manager.Event.Update(@event);
+            if (res.IsUnSuccessful) return HandleError(res);
+
+            return RedirectToPage(Utilities.HomeUrl);
         }
 
         public IActionResult OnPostDelete()
         {
-            if (!Initiate()) return NotInitiated;
-
-            if (!User.IsEventOrganizer) return NotInitiated;
-
             if (Guid.TryParse(Id, out var guid))
             {
                 var res = Manager.Event.Delete(guid);
-                if (!res.IsSuccessful) return HandleError(res);
+                if (res.IsUnSuccessful) return HandleError(res);
             }
 
-            return RedirectToPage("/Pages/Events/List");
+            return RedirectToPage(Utilities.HomeUrl);
         }
     }
 }

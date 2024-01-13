@@ -1,15 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Shared;
 using Shared.Enums;
 using System.ComponentModel.DataAnnotations;
-using System.Xml.Linq;
 
 namespace Web.ViewModels
 {
-    public class UserViewModel: IViewModel
+    public class UserViewModel
     {
-        public Guid Id { get; set; }
-        public Guid BranchId { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string UserName { get; set; }
@@ -22,8 +18,6 @@ namespace Web.ViewModels
         public string Email { get; set; }
         public UserViewModel()
         {
-            Id = Guid.Empty;
-            BranchId = Guid.Empty;
             FirstName = string.Empty;
             UserName = string.Empty;
             LastName = string.Empty;
@@ -33,8 +27,6 @@ namespace Web.ViewModels
             Email = string.Empty;
         }
         public UserViewModel(
-            Guid id,
-            Guid branchId,
             string userName,
             string password,
             UserRole role,
@@ -42,14 +34,13 @@ namespace Web.ViewModels
             string email
         )
         {
-            Id = id;
-            BranchId = branchId;
             UserName = userName;
             if (userName.Contains(" "))
             {
                 FirstName = userName.Split(" ")[0];
                 LastName = userName.Split(" ")[1];
-            } else
+            }
+            else
             {
                 FirstName = string.Empty;
                 LastName = string.Empty;

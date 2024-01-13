@@ -1,31 +1,31 @@
-﻿using Shared;
-using Shared.Errors;
-using Infrastructure.DatabaseManagers;
-using Infrastructure.Tables.Events;
+﻿using Infrastructure.Tables.Events;
 using Logic.Interfaces.Repositories.Events;
 using Logic.Models.Events;
+using Shared;
 using Shared.Enums;
+using SQL_Query_Builder.Select;
 
 namespace Infrastructure.Repositories.Events
 {
-    public class EventRepository : DatabaseInstance<EventTable>, IEventRepository
+    public class EventRepository : DatabaseRepository, IEventRepository
     {
-        private readonly ImageRepository imgRepository;
-        public Guid BranchId { get => branchId; }
-        public IEventParticipanceRepository Participance { get; private set; }
+        public EventRepository(DatabaseManager db) : base(db, EventTable.TableName) { }
+        private AfterOnColumns events => sql.Select
+                .All
+                .Join(TimedEventTable.TableName, JoinType.Left).OnColumns(EventTable.Id, TimedEventTable.EventId)
+                .Join(PaidEventTable.TableName, JoinType.Left).OnColumns(EventTable.Id, PaidEventTable.EventId);
 
-        public EventRepository(string connectionString, Guid branchId) : base(connectionString, branchId)
-        {
-            imgRepository = new ImageRepository(connectionString, branchId);
-            Participance = new ParticipanceRepository(connectionString, branchId);
-        }
         public List<Event> GetAll(int? offsetIndex = null)
         {
-            return sql.Select
-                .All
-                .Join(new TimedEventTable()).OnColumns(EventTable.Id, TimedEventTable.EventId)
-                .Join(new PaidEventTable()).OnColumns(EventTable.Id, PaidEventTable.EventId)
+            return events
                 .OrderBy(TimedEventTable.Start)
+                .Get<Event>();
+        }
+        public List<Event> GetSuggestions(Guid branchId)
+        {
+            return events
+                .Where(EventTable.IsSuggestion).Equals(true)
+                .FinishSelect
                 .Get<Event>();
         }
         public bool Create(Event @event)
@@ -38,11 +38,12 @@ namespace Infrastructure.Repositories.Events
                 .Set(EventTable.Title, @event.Title)
                 .Set(EventTable.Description, @event.Description)
                 .Set(EventTable.Venue, @event.Venue)
+                .Set(EventTable.IsSuggestion, @event.IsSuggestion)
                 .Execute();
 
             if (@event is TimedEvent timedEvent)
             {
-                res &= sql.From<TimedEventTable>()
+                res &= sql.FromTable(TimedEventTable.TableName)
                     .Insert
                     .Set(TimedEventTable.EventId, id)
                     .Set(TimedEventTable.Start, timedEvent.Start)
@@ -52,7 +53,7 @@ namespace Infrastructure.Repositories.Events
 
             if (@event is PaidEvent paidEvent)
             {
-                res &= sql.From<PaidEventTable>()
+                res &= sql.FromTable(PaidEventTable.TableName)
                     .Insert
                     .Set(PaidEventTable.EventId, id)
                     .Set(PaidEventTable.Price, paidEvent.Price)
@@ -76,7 +77,7 @@ namespace Infrastructure.Repositories.Events
 
             if (@event is TimedEvent timedEvent)
             {
-                res &= sql.From<TimedEventTable>()
+                res &= sql.FromTable(TimedEventTable.TableName)
                     .Update
                     .Set(TimedEventTable.Start, timedEvent.Start)
                     .Set(TimedEventTable.End, timedEvent.End)
@@ -86,15 +87,16 @@ namespace Infrastructure.Repositories.Events
 
             if (@event is PaidEvent paidEvent)
             {
-                bool exists = sql.From<PaidEventTable>()
+                bool exists = sql.FromTable(PaidEventTable.TableName)
                         .Select
-                        .Count
+                        .All
                         .Where(PaidEventTable.EventId).Equals(@event.Id)
                         .FinishSelect
-                        .CountValue != 0;
+                        .Count != 0;
+
                 if (exists)
                 {
-                    res &= sql.From<PaidEventTable>()
+                    res &= sql.FromTable(PaidEventTable.TableName)
                         .Update
                         .Set(PaidEventTable.Price, paidEvent.Price)
                         .Set(PaidEventTable.MaxParticipants, paidEvent.MaxParticipants)
@@ -103,7 +105,7 @@ namespace Infrastructure.Repositories.Events
                 }
                 else
                 {
-                    res &= sql.From<PaidEventTable>()
+                    res &= sql.FromTable(PaidEventTable.TableName)
                     .Insert
                     .Set(PaidEventTable.EventId, @event.Id)
                     .Set(PaidEventTable.Price, paidEvent.Price)
@@ -116,79 +118,67 @@ namespace Infrastructure.Repositories.Events
         }
         public bool Delete(Guid id)
         {
-            bool res;
-            try
-            {
-                res = imgRepository.DeleteType(id, ImageType.Background) && Participance.DeleteAllOfEvent(id);
-            } catch
-            {
-                res = false;
-            }
-
-            res &= sql.Delete
+            var res = sql.Delete
                 .Where(EventTable.Id).Equals(id)
                 .Execute();
 
-            sql.From<TimedEventTable>()
+            sql.FromTable(TimedEventTable.TableName)
                 .Delete
                 .Where(TimedEventTable.EventId).Equals(id)
                 .Execute();
-            
-            sql.From<PaidEventTable>()
+
+            sql.FromTable(PaidEventTable.TableName)
                 .Delete
                 .Where(PaidEventTable.EventId).Equals(id)
                 .Execute();
 
             return res;
         }
-        public Event? FindSingleBy(Guid id)
+        public Event? GetById(Guid id)
         {
-            return sql.Select
-                .All
-                .Join(new TimedEventTable()).OnColumns(EventTable.Id, TimedEventTable.EventId)
-                .Join(new PaidEventTable()).OnColumns(EventTable.Id, PaidEventTable.EventId)
-                .Where($"{new EventTable().TableName}.{EventTable.Id}").Equals(id)
+            return events
+                .Where($"{EventTable.TableName}.{EventTable.Id}").Equals(id)
                 .FinishSelect
                 .First<Event>();
         }
-        public List<Event> GetManyBy(string title) => throw new NotImplementedException("You must specify a branch");
-        public List<Event> GetMonthlyEvents(int monthOffset)
+        public List<Event> GetMonthlyEvents(int monthOffset, Guid branchId, EventsFilterEnum? filter)
         {
             var now = DateTime.Now;
+            int year = now.Year;
             int month = now.Month + monthOffset;
-            var firstDayOfMonth = new DateTime(now.Year, month, 1);
-            var lastDayOfMonth = new DateTime(now.Year, month, DateTime.DaysInMonth(now.Year, month), 23, 59, 59);
+            while (month <= 0)
+            {
+                year--;
+                month += 11;
+            }
 
-            return sql.Select
-                .All
-                .Join(new TimedEventTable()).OnColumns(EventTable.Id, TimedEventTable.EventId)
-                .Join(new PaidEventTable()).OnColumns(EventTable.Id, PaidEventTable.EventId)
+            var firstDayOfMonth = new DateTime(year, month, 1);
+            var lastDayOfMonth = new DateTime(year, month, DateTime.DaysInMonth(year, month), 23, 59, 59);
+
+            return events
                 .Where(EventTable.BranchId).Equals(branchId)
                 .And
                 .Where(TimedEventTable.Start).IsMoreOrEqual(firstDayOfMonth)
                 .And
                 .Where(TimedEventTable.Start).IsLessOrEqual(lastDayOfMonth)
+                .FinishSelect
                 .OrderBy(TimedEventTable.Start)
                 .Get<Event>();
         }
-        public List<Event> GetOnGoing()
+        public List<Event> GetOnGoing(Guid branchId)
         {
-            //var end = DateTime.Now;
-            var end =  new DateTime(2023, 05, 11, 18, 0, 0);
-            //var start = DateTime.Now;
-            var start = new DateTime(2023, 05, 11, 18, 0, 0).AddMinutes(30);
-            
-            return sql.Select
-                .All
-                .Join(new TimedEventTable()).OnColumns(EventTable.Id, TimedEventTable.EventId)
-                .Join(new PaidEventTable()).OnColumns(EventTable.Id, PaidEventTable.EventId)
+            var end = DateTime.Now;
+            var start = end.AddMinutes(-30);
+
+            return events
                 .Where(EventTable.BranchId).Equals(branchId)
                 .And
                 .Where(TimedEventTable.Start).IsLessOrEqual(start)
                 .And
                 .Where(TimedEventTable.End).IsMoreOrEqual(end)
+                .FinishSelect
                 .OrderBy(TimedEventTable.Start)
                 .Get<Event>();
-        }   
+        }
     }
 }

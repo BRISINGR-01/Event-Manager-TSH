@@ -1,16 +1,14 @@
-﻿using Infrastructure.SQL;
-using Infrastructure.Tables;
-using Logic;
-using Shared;
+﻿using Infrastructure.Tables;
 using Logic.Interfaces.Repositories;
 using Logic.Models;
+using Shared;
 
-namespace Infrastructure.DatabaseManagers
+namespace Infrastructure.Repositories
 {
-    public class BranchRepository : DatabaseInstance<BranchTable>, IBranchRepository
+
+    public class BranchRepository : DatabaseRepository, IBranchRepository
     {
-        public Guid BranchId { get => branchId; }
-        public BranchRepository(string connectionString, Guid branchId) : base(connectionString, branchId) { }
+        public BranchRepository(DatabaseManager db) : base(db, BranchTable.TableName) { }
         public List<Branch> GetAll(int? offsetIndex = null)
         {
             return sql.Select
@@ -32,13 +30,13 @@ namespace Infrastructure.DatabaseManagers
                 .Where(BranchTable.Id).Equals(Branch.Id)
                 .Execute();
         }
-        public bool Delete(Guid id) 
-        { 
+        public bool Delete(Guid id)
+        {
             return sql.Delete
                 .Where(BranchTable.Id).Equals(id)
                 .Execute();
         }
-        public Branch? FindSingleBy(Guid id)
+        public Branch? GetById(Guid id)
         {
             return sql.Select
                 .All
@@ -51,6 +49,7 @@ namespace Infrastructure.DatabaseManagers
             return sql.Select
                 .All
                 .Where(BranchTable.Name).Contains(name)
+                .FinishSelect
                 .OrderBy(BranchTable.Name)
                 .Get<Branch>();
         }

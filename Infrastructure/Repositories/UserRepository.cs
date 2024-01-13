@@ -1,30 +1,25 @@
 ﻿using Infrastructure.Tables;
-using Logic;
-using Shared.Enums;
-using Shared;
 using Logic.Interfaces.Repositories;
-using Shared.Errors;
-using Infrastructure.Repositories;
 using Logic.Models;
+using Logic.Utilities;
+using Shared;
+using Shared.Enums;
+using SQL_Query_Builder.Where;
 
-namespace Infrastructure.DatabaseManagers
+namespace Infrastructure.Repositories
 {
-    public class UserRepository : DatabaseInstance<UserTable>, IUserRepository
+    public class UserRepository : DatabaseRepository, IUserRepository
     {
-        public Guid BranchId { get => branchId; }
-        private readonly ImageRepository imgRepository;
-        public UserRepository(string connectionString, Guid? branchId) : base(connectionString, branchId ?? Guid.Empty)
-        {
-            imgRepository = new ImageRepository(connectionString, branchId ?? Guid.Empty);
-        }
-        public User? GetBy(Guid id)
+        public UserRepository(DatabaseManager db) : base(db, UserTable.TableName) { }
+        public User? GetById(Guid id)
         {
             return sql.Select
                 .All
                 .Where(UserTable.Id).Equals(id)
                 .FinishSelect
                 .First<User>();
-        }public List<User> GetAll(int? offsetIndex = null)
+        }
+        public List<User> GetAll(int? offsetIndex = null)
         {
             return sql.Select
                 .All
@@ -36,61 +31,26 @@ namespace Infrastructure.DatabaseManagers
             return sql.Insert
                 .Set(UserTable.Id, Helpers.NewId)
                 .Set(UserTable.BranchId, user.BranchId)
-                .Set(UserTable.UserName, new Encryption().Encrypt(user.UserName))
-                .Set(UserTable.Password, new Encryption().Encrypt(user.Password))
+                .Set(UserTable.UserName, Encryption.Encrypt(user.UserName))
                 .Set(UserTable.Role, user.Role)
-                .Set(UserTable.Email, new Encryption().Encrypt(user.Email))
                 .Execute();
-        }
-        public bool Exists(User user)
-        {
-            return sql
-                .Select
-                .Count
-                .Where(UserTable.Email).Equals(new Encryption().Encrypt(user.Email))
-                .FinishSelect
-                .CountValue > 0;
         }
         public bool Update(User user)
         {
             return sql.Update
-                .Set(UserTable.UserName, new Encryption().Encrypt(user.UserName))
-                .Set(UserTable.Password, new Encryption().Encrypt(user.Password))
+                .Set(UserTable.UserName, Encryption.Encrypt(user.UserName))
                 .Set(UserTable.Role, user.Role)
-                .Set(UserTable.Email, new Encryption().Encrypt(user.Email))
                 .Where(UserTable.Id).Equals(user.Id)
                 .Execute();
         }
         public bool Delete(Guid id)
         {
-            try
-            {
-                imgRepository.DeleteType(id, ImageType.User);
-            } catch { }
-
             return
                 sql.Delete
                 .Where(UserTable.Id).Equals(id)
                 .Execute();
         }
-        public User? FindSingleBy(Guid id)
-        {
-            return sql.Select
-                .All
-                .Where(UserTable.Id).Equals(id)
-                .FinishSelect.First<User>();
-        }
-        public User? FindSingleBy(string email, string password)
-        {
-            return sql.Select
-                .All
-                .Where(UserTable.Email).Equals(new Encryption().Encrypt(email))
-                .And
-                .Where(UserTable.Password).Equals(new Encryption().Encrypt(password))
-                .FinishSelect
-                .First<User>();
-        }
-        public List<User> GetBranchContacts()
+        public List<User> GetBranchContacts(Guid branchId)
         {
             return sql.Select
                 .All
@@ -99,10 +59,11 @@ namespace Infrastructure.DatabaseManagers
                 .Where(UserTable.Role).Equals(UserRole.StudentComitee)
                 .And
                 .Where(UserTable.BranchId).Equals(branchId)
+                .FinishSelect
                 .OrderBy(UserTable.UserName)
                 .Get<User>();
         }
-        public List<User> FindManyBy(Guid? branchId = null)
+        public List<User> GetAllFromBranch(Guid? branchId = null)
         {
             if (branchId == null)
             {
@@ -116,8 +77,81 @@ namespace Infrastructure.DatabaseManagers
                 return sql.Select
                     .All
                     .Where(UserTable.BranchId).Equals(branchId)
+                    .FinishSelect
                     .OrderBy(UserTable.UserName)
                     .Get<User>();
+            }
+        }
+
+        public List<User> GetByRoles(List<UserRole> roles, Guid branchId)
+        {
+            var statement = sql.Select
+                .All
+                .Where(UserTable.BranchId).Equals(branchId);
+
+            foreach (var role in roles)
+            {
+                statement.Or.Where(UserTable.Role).Equals(role);
+            }
+
+            return statement.FinishSelect.Get<User>();
+        }
+        public List<PushNotificationSubscription> GetSubscriptions(List<UserRole> roles, Guid branchId)
+        {
+            var statement = sql.Select
+                .All
+                .Join(PushNotificationSubscriptionTable.TableName)
+                .OnColumns(UserTable.Id, PushNotificationSubscriptionTable.UserId)
+                .Where(UserTable.BranchId).Equals(branchId);
+
+
+            for (int i = 0; i < roles.Count; i++)
+            {
+                ICondition condition;
+                if (i == 0)
+                {
+                    condition = statement.And;
+                }
+                else
+                {
+                    condition = statement.Or;
+                }
+                condition.Where(UserTable.Role).Equals(roles[i]);
+            }
+
+            return statement.FinishSelect.Get<PushNotificationSubscription>();
+        }
+        public bool Subscribe(PushNotificationSubscription subscription)
+        {
+            var exists = sql
+                .FromTable(PushNotificationSubscriptionTable.TableName)
+                .Select
+                .All
+                .Where(PushNotificationSubscriptionTable.UserId).Equals(subscription.UserId)
+                .FinishSelect
+                .First<PushNotificationSubscription>() != null;
+
+            if (exists)
+            {
+                return sql
+                        .FromTable(PushNotificationSubscriptionTable.TableName)
+                        .Update
+                        .Set(PushNotificationSubscriptionTable.Endpoint, subscription.Endpoint)
+                        .Set(PushNotificationSubscriptionTable.P256DH, subscription.P256DH)
+                        .Set(PushNotificationSubscriptionTable.Auth, subscription.Auth)
+                        .Where(PushNotificationSubscriptionTable.UserId).Equals(subscription.UserId)
+                        .Execute();
+            }
+            else
+            {
+                return sql
+                        .FromTable(PushNotificationSubscriptionTable.TableName)
+                        .Insert
+                        .Set(PushNotificationSubscriptionTable.UserId, subscription.UserId)
+                        .Set(PushNotificationSubscriptionTable.Endpoint, subscription.Endpoint)
+                        .Set(PushNotificationSubscriptionTable.P256DH, subscription.P256DH)
+                        .Set(PushNotificationSubscriptionTable.Auth, subscription.Auth)
+                        .Execute();
             }
         }
     }

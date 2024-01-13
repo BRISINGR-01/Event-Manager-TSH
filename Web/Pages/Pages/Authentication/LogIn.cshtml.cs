@@ -1,38 +1,38 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using Shared;
+using Logic.Configuration;
+using Logic.Interfaces;
+using Logic.Utilities;
 using Microsoft.AspNetCore.Authorization;
-using Logic;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Shared;
+using Web.Middlewares.Authentication;
 using Web.ViewModels;
-using Infrastructure;
-using Logic.Models;
 
 namespace Web.Pages.Authentication
 {
     [AllowAnonymous]
     public class LogInModel : PageModelWrapper
     {
+        private HashingConfig Config;
         public bool AreCredentialsWrong = false;
         [BindProperty]
-        public UserViewModel LoggedUser { get; set; } = new();
+        public new UserViewModel User { get; set; } = new();
         [BindProperty]
         public bool RememberMe { get; set; }
+        public LogInModel(IOptions<HashingConfig> config, IManager manager, IAuthenticationContext ctx) : base(manager, ctx)
+        {
+            Config = config.Value;
+        }
         public IActionResult OnGet(string? returnUrl = null)
-        { 
-            if (!Initiate()) return Page();
+        {
+            if (!Ctx.IsAuthenticated) return Page();
 
-            var res = Manager.UserGet(User.Id);
-            if (!res.IsSuccessful || res.Value == null) return Page();
-
-            LogUserIn(res.Value);
-
-            returnUrl ??= Url.Content("~/");
-            return RedirectToPage(string.IsNullOrEmpty(returnUrl) || returnUrl == "/" ? "/Pages/Events/List" : returnUrl);
+            return RedirectToPage(returnUrl);
         }
 
-        private IActionResult UnsuccessfulLogIn { get
+        private IActionResult UnsuccessfulLogIn
+        {
+            get
             {
                 AreCredentialsWrong = true;
                 return Page();
@@ -42,14 +42,14 @@ namespace Web.Pages.Authentication
         public IActionResult OnPostLogIn(string? returnUrl = null)
         {
             if (!ModelState.IsValid) return UnsuccessfulLogIn;
-            Initiate();
 
-            var res = Manager.CheckCredentials(LoggedUser.Email, LoggedUser.Password);
-            if (!res.IsSuccessful || res.Value == null) return UnsuccessfulLogIn;
+            var res = Manager.Credentials.GetByEmail(User.Email);
+            if (res.IsUnSuccessful) return UnsuccessfulLogIn;
 
-            User user = res.Value;
+            var credentials = res.Value;
+            credentials.Configure(Config);
 
-            LogUserIn(user);
+            if (!credentials.VerifyPassword(User.Password)) HandleError("Incorrect credentials!");
 
             if (RememberMe)
             {
@@ -57,16 +57,17 @@ namespace Web.Pages.Authentication
                 {
                     Expires = DateTime.Now.AddYears(2)
                 };
-                var emailCookie = Manager.Encrypt(user.Email);
-                var passwordCookie = Manager.Encrypt(user.Password);
-                
-                if (emailCookie != null) Response.Cookies.Append(Constants.EmailCookie, emailCookie, cOption);
-                if (passwordCookie != null) Response.Cookies.Append(Constants.PasswordCookie, passwordCookie, cOption);
+                var encryptedToken = Encryption.Encrypt(credentials.Email + ";" + credentials.PasswordHash);
+
+                if (encryptedToken != null)
+                {
+                    Response.Cookies.Append(Constants.TokenCookie, encryptedToken, cOption);
+                }
             }
 
             returnUrl ??= Url.Content("~/");
-            
-            return RedirectToPage(string.IsNullOrEmpty(returnUrl) || returnUrl == "/" ? "/Pages/Events/List" : returnUrl);
+
+            return RedirectToPage(returnUrl);
         }
     }
 }

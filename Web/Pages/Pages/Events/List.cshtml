@@ -7,15 +7,15 @@
 @using System.Globalization;
 @using Logic.Models.Events;
 
-<div>
+<div class="h-100">
     <div class="w-100 d-flex align-items-center mb-3 justify-content-center">
         <a class="btn btn-outline-dark px-2" asp-route-month="@(Model.Month - 1)">Prev</a>
-        <span class="mx-3 text-center">@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(new DateTime(DateTime.Now.Year, DateTime.Now.Month + Model.Month, 1).Month)</span>
+        <span class="mx-3 text-center">@Model.MonthName</span>
         <a class="btn btn-outline-dark px-2" asp-route-month="@(Model.Month + 1)">Next</a>
     </div>
     @if (Model.Events.Count == 0)
     {
-        <p class="fs-3 text-center">There are no events this month!</p>
+        <p class="fs-3 mt-5 text-center">There are no events this month!</p>
     } else
     {
         <div class="gap-5 pb-5 d-flex flex-wrap w-100 justify-content-center">

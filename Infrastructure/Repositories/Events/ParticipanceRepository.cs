@@ -1,16 +1,15 @@
-﻿using Shared.Enums;
-using Infrastructure.DatabaseManagers;
-using Infrastructure.Tables.Events;
+﻿using Infrastructure.Tables.Events;
 using Logic.Interfaces.Repositories.Events;
 using Logic.Models.Events;
+using Shared.Enums;
 
 namespace Infrastructure.Repositories.Events
 {
-    public class ParticipanceRepository : DatabaseInstance<EventParticipanceTable>, IEventParticipanceRepository
+    public class ParticipanceRepository : DatabaseRepository, IEventParticipanceRepository
     {
-        public Guid BranchId { get => branchId; }
-        public ParticipanceRepository(string connectionString, Guid branchId) : base(connectionString, branchId) { }
-        public List<EventParticipance> GetAll(int? offsetIndex = null) {
+        public ParticipanceRepository(DatabaseManager db) : base(db, EventParticipanceTable.TableName) { }
+        public List<EventParticipance> GetAll(int? offsetIndex = null)
+        {
             return sql.Select
                 .All
                 .Get<EventParticipance>();
@@ -18,6 +17,7 @@ namespace Infrastructure.Repositories.Events
         public List<EventParticipance> GetAllForEvent(Guid eventId)
         {
             return sql.Select
+                .All
                 .Where(EventParticipanceTable.EventId).Equals(eventId)
                 .FinishSelect
                 .Get<EventParticipance>();
@@ -25,12 +25,12 @@ namespace Infrastructure.Repositories.Events
         public int GetAllSignedForEvent(Guid eventId)
         {
             return sql.Select
-                .Count
+                .All
                 .Where(EventParticipanceTable.EventId).Equals(eventId)
                 .And
                 .Where(EventParticipanceTable.State).Equals(EventParticipanceEnum.Signed)
                 .FinishSelect
-                .CountValue;
+                .Count;
         }
         public bool Create(EventParticipance participance)
         {
@@ -64,23 +64,18 @@ namespace Infrastructure.Repositories.Events
 
             return true;
         }
-        public EventParticipance? FindSingleBy(Guid id)
+        public EventParticipance? GetById(Guid id)
         {
             return sql.Select
+                .All
                 .Where(EventParticipanceTable.Id).Equals(id)
                 .FinishSelect
                 .First<EventParticipance>();
         }
-        public List<EventParticipance> FindManyBy(Guid EventId)
-        {
-            return sql.Select
-                .Where(EventParticipanceTable.EventId).Equals(EventId)
-                .FinishSelect
-                .Get<EventParticipance>();
-        }
         public EventParticipance? GetEventUserParticipance(Guid eventId, Guid userId)
         {
             return sql.Select
+                .All
                 .Where(EventParticipanceTable.UserId).Equals(userId)
                 .And
                 .Where(EventParticipanceTable.EventId).Equals(eventId)

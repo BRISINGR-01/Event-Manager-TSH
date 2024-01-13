@@ -9,44 +9,44 @@
     <h3 class="title">Fill in the details:</h3>
     <form class="form-buttons d-flex align-items-center flex-column" method="post" enctype="multipart/form-data">
         <div class="field col-sm-3">
-            <label asp-for="EventModel.Image" class="form-label"></label>
-            <span asp-validation-for="EventModel.Image"></span>
-            <input asp-for="EventModel.Image" type="file" class="form-control">
+            <label asp-for="EventViewModel.Image" class="form-label"></label>
+            <span asp-validation-for="EventViewModel.Image"></span>
+            <input asp-for="EventViewModel.Image" type="file" class="form-control">
         </div>
         <div class="field col-sm-3 col-8">
-            <label asp-for="EventModel.Title" class="form-label"></label>
-            <span asp-validation-for="EventModel.Title"></span>
-            <input asp-for="EventModel.Title" class="form-control" value="@Model.Event?.Title">
+            <label asp-for="EventViewModel.Title" class="form-label"></label>
+            <span asp-validation-for="EventViewModel.Title"></span>
+            <input asp-for="EventViewModel.Title" class="form-control" value="@Model.Event?.Title">
         </div>
         <div class="field col-sm-6 col-10">
-            <label asp-for="EventModel.Description" class="form-label"></label>
-            <span asp-validation-for="EventModel.Description"></span>
-            <textarea rows="5" asp-for="EventModel.Description"type="text" class="form-control" value="@Model.Event?.Description"></textarea>
+            <label asp-for="EventViewModel.Description" class="form-label"></label>
+            <span asp-validation-for="EventViewModel.Description"></span>
+            <textarea rows="5" asp-for="EventViewModel.Description"type="text" class="form-control" value="@Model.Event?.Description"></textarea>
         </div>
         <div class="field d-flex flex-sm-row flex-column gap-3 justify-content-between col-sm-6 col-10 py-2">
             <div>
-                <label asp-for="EventModel.Start" class="form-label"></label>
-                <span asp-validation-for="EventModel.Start"></span>
-                <input id="start-date" asp-for="EventModel.Start" type="datetime-local" class="form-control" value="@(Model.Event is TimedEvent timedEvent ? timedEvent.Start.ToString("yyyy-MM-ddThh:mm") : "")">
+                <label asp-for="EventViewModel.Start" class="form-label"></label>
+                <span asp-validation-for="EventViewModel.Start"></span>
+                <input id="start-date" asp-for="EventViewModel.Start" type="datetime-local" class="form-control" value="@(Model.Event is TimedEvent timedEvent ? timedEvent.Start.ToString("yyyy-MM-ddThh:mm") : "")">
                 @(Model.Event is TimedEvent timedEvent2 ? timedEvent2.Start.ToString("yyyy-MM-ddThh:mm") : "")
-                <label asp-for="EventModel.End" class="form-label"></label>
-                <span asp-validation-for="EventModel.End"></span>
-                <input id="end-date" asp-for="EventModel.End" type="datetime-local" class="form-control" value="@(Model.Event is TimedEvent timedEventEnd ? timedEventEnd.End?.ToString("yyyy-MM-ddThh:mm") : "")">
+                <label asp-for="EventViewModel.End" class="form-label"></label>
+                <span asp-validation-for="EventViewModel.End"></span>
+                <input id="end-date" asp-for="EventViewModel.End" type="datetime-local" class="form-control" value="@(Model.Event is TimedEvent timedEventEnd ? timedEventEnd.End?.ToString("yyyy-MM-ddThh:mm") : "")">
             </div>
             <div>
-                <label asp-for="EventModel.Price" class="form-label"></label>
-                <span asp-validation-for="EventModel.Price"></span>
-                <input step="any" asp-for="EventModel.Price" type="number" class="form-control" value="@(Model.Event is PaidEvent paidEvent2 ? paidEvent2.Price: null)">
+                <label asp-for="EventViewModel.Price" class="form-label"></label>
+                <span asp-validation-for="EventViewModel.Price"></span>
+                <input step="any" asp-for="EventViewModel.Price" type="number" class="form-control" value="@(Model.Event is PaidEvent paidEvent2 ? paidEvent2.Price: null)">
 
-                <label asp-for="EventModel.MaxParticipants" class="form-label"></label>
-                <span asp-validation-for="EventModel.MaxParticipants"></span>
-                <input asp-for="EventModel.MaxParticipants" type="number" class="form-control" value="@(Model.Event is PaidEvent paidEvent ? paidEvent.MaxParticipants : null)">
+                <label asp-for="EventViewModel.MaxParticipants" class="form-label"></label>
+                <span asp-validation-for="EventViewModel.MaxParticipants"></span>
+                <input asp-for="EventViewModel.MaxParticipants" type="number" class="form-control" value="@(Model.Event is PaidEvent paidEvent ? paidEvent.MaxParticipants : null)">
             </div>
         </div>
         <div class="field col-sm-5 col-10">
-            <label asp-for="EventModel.Venue" class="form-label"></label>
-            <span asp-validation-for="EventModel.Venue"></span>
-            <input asp-for="EventModel.Venue" type="text" class="form-control" value="@Model.Event?.Venue">
+            <label asp-for="EventViewModel.Venue" class="form-label"></label>
+            <span asp-validation-for="EventViewModel.Venue"></span>
+            <input asp-for="EventViewModel.Venue" type="text" class="form-control" value="@Model.Event?.Venue">
         </div>
         <div class="d-flex gap-3 mt-3">
             <button type="submit" class="btn btn-dark">Done</button>

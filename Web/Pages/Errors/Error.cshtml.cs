@@ -1,6 +1,7 @@
+using Logic.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Diagnostics;
+using Web.Middlewares.Authentication;
 
 namespace Web.Pages.Errors
 {
@@ -12,11 +13,8 @@ namespace Web.Pages.Errors
 
         public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
 
-        private readonly ILogger<ErrorModel> _logger;
-
-        public ErrorModel(ILogger<ErrorModel> logger)
+        public ErrorModel(IManager manager, IAuthenticationContext ctx) : base(manager, ctx)
         {
-            _logger = logger;
         }
 
         public void OnGet()

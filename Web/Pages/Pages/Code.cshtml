@@ -4,15 +4,21 @@
     ViewData["Title"] = "Check code";
 }
 
-<input id="userId" hidden type="text" value="@Model.Id"/>
+<input id="code" hidden type="text" value="@Model.Code"/>
 <div class="w-100 h-100 d-flex justify-content-center align-items-center bg-yellow flex-column gap-5">
-    <div id="qrcode" style="border: 2em solid white; border-radius: 1em"></div>
-    <a class="btn btn-dark" id="qr-download">
-        <img alt="download" src="~/assets/download.svg"/>
-    </a>
+    @if (Model.Code == null)
+    {
+        <h1>There was a problem</h1>
+    } else
+    {
+        <div id="qrcode" style="border: 2em solid white; border-radius: 1em"></div>
+        <a class="btn btn-dark" id="qr-download">
+            <img alt="download" src="~/assets/download.svg"/>
+        </a>
+    }
 </div>
 
-@if (Model.User.IsStudentComitee)
+@if (Model.Ctx.User.IsStudentComitee)
 {
     <a asp-page="CheckCode" class="position-absolute bottom-0 end-0 m-3">
         Scan QR code
@@ -23,15 +29,13 @@
 <script src="~/lib/qrcodejs/qrcode.min.js"></script>
 <script>
     $(document).ready(function () {
-        const url = window.location.origin + "/CheckCode/" + $("#userId").val();
+        const url = window.location.origin + "/CheckCode/" + $("#code").val();
         var qrcode = new QRCode("qrcode", { colorLight: "#fff" });
         qrcode.makeCode(url);
     });
     $("#qr-download").on("click", () => {
         let data = document.getElementById("qrcode").querySelector("img")?.src;
         if (!data) return;
-
-        console.log(data)
 
         var link = document.createElement("a");
         link.download = "event code";
