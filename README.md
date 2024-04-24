@@ -1,4 +1,9 @@
-# TSH-2
+# TSH Event Manager
+
+My second-semester project at Fontys. It was inspired from my stay at TSH (The Social Hub) and my work there as a part of the event committee. I even had the chance to interview the event organizer on how to accomodate the app to the needs of the company. You can check out more details in the **Documents** folder.
+
+## Goal
+An event management system designed specifically for TSH. Its main aim is to combine different systems into one – creating/joining events, sharing photos, scanning/storing QR codes, events promotion, and a means communication about changes. It will provide security but keep an easy-to-use interface with well-crafted design which fits the company. Among shared functionality there will be role-specific features for event-managers and students as well as mixed ones for students on the event committee. The roles are defined as such: students will be able to interact with the events and other features as “clients” and event-organizers will act as “admins” by creating and managing the content on the platform. Event committee participants will have common restrictions with other students and partial access to a few features reserved to the organizers. The design is going to be responsive and the web application – downloadable. That way it will be accessible from all devices, unlike the desktop application which will serve as administration panel mainly for accounts and branches management. All employees, students, events, and other content will be branch-specific and accessible only within members of the same branch. Only Administrators will have access to all information and privileges to access the administration panel.
 
 ## Set up
 
@@ -37,6 +42,6 @@ az container create --resource-group myResourceGroup --name aci-tutorial-app --i
 
 ```
 
-### clean up
+#### Clean up
 
 `az group delete --name fontys-group`
